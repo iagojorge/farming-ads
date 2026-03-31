@@ -1,0 +1,558 @@
+{
+  "settings": {
+    "adspowerUrl": "http://127.0.0.1:50325",
+    "apiKey": "3dba8a59e1504225dd20ae453f2799350052c476929674b2",
+    "rpaFlowId": "RPA_1774630007372",
+    "rpaProcessId": "",
+    "concurrentProfiles": 1,
+    "defaultDurationMinutes": 30,
+    "rpaMode": "api",
+    "timezone": "America/Sao_Paulo",
+    "groupName": "Automatização teste",
+    "warmupDays": 21,
+    "warmupDailyTime": "09:00",
+    "warmupSessionMinutes": 30
+  },
+  "profiles": [
+    {
+      "enabled": true,
+      "durationMinutes": 30,
+      "id": "k1ayoqhh",
+      "name": "Farming – farmingtestes50",
+      "serialNumber": "2191",
+      "groupName": "Automatização teste"
+    },
+    {
+      "enabled": true,
+      "durationMinutes": 30,
+      "id": "k18genfs",
+      "name": "1185",
+      "serialNumber": "1241",
+      "groupName": "CRIAR GOOGLE ADS"
+    },
+    {
+      "enabled": true,
+      "durationMinutes": 30,
+      "id": "k18gekdw",
+      "name": "1184",
+      "serialNumber": "1240",
+      "groupName": "CRIAR GOOGLE ADS"
+    },
+    {
+      "enabled": true,
+      "durationMinutes": 30,
+      "id": "k18gegce",
+      "name": "1183",
+      "serialNumber": "1239",
+      "groupName": "CRIAR GOOGLE ADS"
+    },
+    {
+      "enabled": true,
+      "durationMinutes": 30,
+      "id": "k18gef7s",
+      "name": "1182",
+      "serialNumber": "1238",
+      "groupName": "CRIAR GOOGLE ADS"
+    }
+  ],
+  "schedules": [],
+  "logs": [
+    {
+      "id": "1774933153549-mrb12mg8nz",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Farming ativo — aguardando 30 minuto(s) (até 02:29:13)",
+      "timestamp": "2026-03-31T04:59:13.549Z"
+    },
+    {
+      "id": "1774933150536-9v122u6nvfu",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Browser aberto para \"Farming – farmingtestes50\"",
+      "timestamp": "2026-03-31T04:59:10.536Z"
+    },
+    {
+      "id": "1774933145425-qvgrfj9frwa",
+      "type": "warn",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "⚠️ Modo API do RPA não disponível no este AdsPower. Use modo 'Auto' em vez disso.",
+      "timestamp": "2026-03-31T04:59:05.425Z"
+    },
+    {
+      "id": "1774933145424-eaoww75hjjr",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Iniciando perfil \"Farming – farmingtestes50\"",
+      "timestamp": "2026-03-31T04:59:05.424Z"
+    },
+    {
+      "id": "1774933145423-l85k6hlln",
+      "type": "info",
+      "profileId": null,
+      "profileName": null,
+      "message": "Iniciando execução para 1 perfil(is)",
+      "timestamp": "2026-03-31T04:59:05.423Z"
+    },
+    {
+      "id": "1774915295666-fpay5ut2b3",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Farming ativo — aguardando 30 minuto(s) (até 21:31:35)",
+      "timestamp": "2026-03-31T00:01:35.666Z"
+    },
+    {
+      "id": "1774915285616-wuh2e5zarui",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Aguardando execução do RPA...",
+      "timestamp": "2026-03-31T00:01:25.616Z"
+    },
+    {
+      "id": "1774915280589-p6miiu8j1xp",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Browser aberto para \"Farming – farmingtestes50\"",
+      "timestamp": "2026-03-31T00:01:20.589Z"
+    },
+    {
+      "id": "1774915276626-wzryq4uadz",
+      "type": "success",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "✓ RPA configurado — será executado ao abrir browser",
+      "timestamp": "2026-03-31T00:01:16.626Z"
+    },
+    {
+      "id": "1774915275746-7695vfhq9iw",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Configurando RPA automático (ID: RPA_1774630007372)...",
+      "timestamp": "2026-03-31T00:01:15.746Z"
+    },
+    {
+      "id": "1774915275745-98kw7zqh48",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Iniciando perfil \"Farming – farmingtestes50\"",
+      "timestamp": "2026-03-31T00:01:15.745Z"
+    },
+    {
+      "id": "1774915275744-kmheq86ht3a",
+      "type": "info",
+      "profileId": null,
+      "profileName": null,
+      "message": "Iniciando execução para 1 perfil(is)",
+      "timestamp": "2026-03-31T00:01:15.744Z"
+    },
+    {
+      "id": "1774915223363-4rj01jdua1e",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Farming ativo — aguardando 30 minuto(s) (até 21:30:23)",
+      "timestamp": "2026-03-31T00:00:23.363Z"
+    },
+    {
+      "id": "1774915213317-jmdkn6txx2",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Aguardando execução do RPA...",
+      "timestamp": "2026-03-31T00:00:13.317Z"
+    },
+    {
+      "id": "1774915208308-8rvel47v2x8",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Browser aberto para \"Farming – farmingtestes50\"",
+      "timestamp": "2026-03-31T00:00:08.308Z"
+    },
+    {
+      "id": "1774915204378-5atryevi4n3",
+      "type": "success",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "✓ RPA configurado — será executado ao abrir browser",
+      "timestamp": "2026-03-31T00:00:04.378Z"
+    },
+    {
+      "id": "1774915203391-b0y8agwlht7",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Configurando RPA automático (ID: RPA_1774630007372)...",
+      "timestamp": "2026-03-31T00:00:03.391Z"
+    },
+    {
+      "id": "1774915203390-hi0sdcby1rw",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Iniciando perfil \"Farming – farmingtestes50\"",
+      "timestamp": "2026-03-31T00:00:03.390Z"
+    },
+    {
+      "id": "1774915203389-h72z4wliryi",
+      "type": "info",
+      "profileId": null,
+      "profileName": null,
+      "message": "Iniciando execução para 1 perfil(is)",
+      "timestamp": "2026-03-31T00:00:03.389Z"
+    },
+    {
+      "id": "1774915121224-7a5om7yxatu",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Farming ativo — aguardando 30 minuto(s) (até 21:28:41)",
+      "timestamp": "2026-03-30T23:58:41.224Z"
+    },
+    {
+      "id": "1774915111173-5bjmdrzycww",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Aguardando execução do RPA...",
+      "timestamp": "2026-03-30T23:58:31.173Z"
+    },
+    {
+      "id": "1774915106151-11kie6jqs0tm",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Browser aberto para \"Farming – farmingtestes50\"",
+      "timestamp": "2026-03-30T23:58:26.151Z"
+    },
+    {
+      "id": "1774915102430-udky0qgspn",
+      "type": "success",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "✓ RPA configurado — será executado ao abrir browser",
+      "timestamp": "2026-03-30T23:58:22.430Z"
+    },
+    {
+      "id": "1774915101959-qo4i0ncpk",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Configurando RPA automático (ID: RPA_1774630007372)...",
+      "timestamp": "2026-03-30T23:58:21.959Z"
+    },
+    {
+      "id": "1774915101957-w5vyfq784tk",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Iniciando perfil \"Farming – farmingtestes50\"",
+      "timestamp": "2026-03-30T23:58:21.957Z"
+    },
+    {
+      "id": "1774915101955-pxdrf75ye5c",
+      "type": "info",
+      "profileId": null,
+      "profileName": null,
+      "message": "Iniciando execução para 1 perfil(is)",
+      "timestamp": "2026-03-30T23:58:21.955Z"
+    },
+    {
+      "id": "1774914960680-u5q1ta682u",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Farming ativo — aguardando 30 minuto(s) (até 21:26:00)",
+      "timestamp": "2026-03-30T23:56:00.680Z"
+    },
+    {
+      "id": "1774914950636-jmafq2bwum",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Aguardando execução do RPA...",
+      "timestamp": "2026-03-30T23:55:50.636Z"
+    },
+    {
+      "id": "1774914945624-qblwd0ecuok",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Browser aberto para \"Farming – farmingtestes50\"",
+      "timestamp": "2026-03-30T23:55:45.624Z"
+    },
+    {
+      "id": "1774914941545-nsnx30uw4nj",
+      "type": "success",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "✓ RPA configurado — será executado ao abrir browser",
+      "timestamp": "2026-03-30T23:55:41.545Z"
+    },
+    {
+      "id": "1774914940645-097e1s45pnb",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Configurando RPA automático (ID: RPA_1774630007372)...",
+      "timestamp": "2026-03-30T23:55:40.645Z"
+    },
+    {
+      "id": "1774914940644-yhduvnroi8j",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Iniciando perfil \"Farming – farmingtestes50\"",
+      "timestamp": "2026-03-30T23:55:40.644Z"
+    },
+    {
+      "id": "1774914940643-1tnl88x2485",
+      "type": "info",
+      "profileId": null,
+      "profileName": null,
+      "message": "Iniciando execução para 1 perfil(is)",
+      "timestamp": "2026-03-30T23:55:40.643Z"
+    },
+    {
+      "id": "1774912469372-37e3wt9od2x",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Aguardando execução do RPA...",
+      "timestamp": "2026-03-30T23:14:29.372Z"
+    },
+    {
+      "id": "1774912469371-zmfn9x4zcqs",
+      "type": "warn",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "⚠️ RPA: Endpoint RPA não suportado nesta versão do AdsPower",
+      "timestamp": "2026-03-30T23:14:29.371Z"
+    },
+    {
+      "id": "1774912469365-ugjcj8usl1",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Disparando fluxo RPA ID: RPA_1774630007372...",
+      "timestamp": "2026-03-30T23:14:29.365Z"
+    },
+    {
+      "id": "1774912466363-mkhghrpzy9r",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Browser aberto para \"Farming – farmingtestes50\"",
+      "timestamp": "2026-03-30T23:14:26.363Z"
+    },
+    {
+      "id": "1774912461351-09athlopl5y",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Iniciando perfil \"Farming – farmingtestes50\"",
+      "timestamp": "2026-03-30T23:14:21.351Z"
+    },
+    {
+      "id": "1774912461350-xqd2txscfz",
+      "type": "info",
+      "profileId": null,
+      "profileName": null,
+      "message": "Iniciando execução para 1 perfil(is)",
+      "timestamp": "2026-03-30T23:14:21.350Z"
+    },
+    {
+      "id": "1774912257084-wws1qs404o",
+      "type": "info",
+      "profileId": null,
+      "profileName": null,
+      "message": "Execução finalizada (interrompida)",
+      "timestamp": "2026-03-30T23:10:57.084Z"
+    },
+    {
+      "id": "1774912257079-pkl6whv1r8",
+      "type": "error",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Erro em \"Farming – farmingtestes50\": Execução interrompida pelo usuário",
+      "timestamp": "2026-03-30T23:10:57.079Z"
+    },
+    {
+      "id": "1774912256601-s4nwlunkqkq",
+      "type": "warn",
+      "profileId": null,
+      "profileName": null,
+      "message": "Worker interrompido manualmente",
+      "timestamp": "2026-03-30T23:10:56.601Z"
+    },
+    {
+      "id": "1774911953302-8xe482ts4it",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Farming ativo — aguardando 30 minuto(s) (até 20:35:53)",
+      "timestamp": "2026-03-30T23:05:53.303Z"
+    },
+    {
+      "id": "1774911938233-4pe88s158qi",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Aguardando execução do RPA...",
+      "timestamp": "2026-03-30T23:05:38.233Z"
+    },
+    {
+      "id": "1774911938232-6to3288vrz2",
+      "type": "warn",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "⚠️ RPA: Endpoint RPA não suportado nesta versão do AdsPower",
+      "timestamp": "2026-03-30T23:05:38.232Z"
+    },
+    {
+      "id": "1774911938227-87ybbp7wxu4",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Disparando fluxo RPA ID: RPA_1774630007372...",
+      "timestamp": "2026-03-30T23:05:38.227Z"
+    },
+    {
+      "id": "1774911935212-s26rkbx6if7",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Browser aberto para \"Farming – farmingtestes50\"",
+      "timestamp": "2026-03-30T23:05:35.212Z"
+    },
+    {
+      "id": "1774911930791-eclde8auq2w",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Iniciando perfil \"Farming – farmingtestes50\"",
+      "timestamp": "2026-03-30T23:05:30.791Z"
+    },
+    {
+      "id": "1774911930790-3k0ii7f53xi",
+      "type": "info",
+      "profileId": null,
+      "profileName": null,
+      "message": "Iniciando execução para 1 perfil(is)",
+      "timestamp": "2026-03-30T23:05:30.790Z"
+    },
+    {
+      "id": "1774911556555-x3x07yzrud",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Farming ativo — aguardando 30 minuto(s) (até 20:29:16)",
+      "timestamp": "2026-03-30T22:59:16.555Z"
+    },
+    {
+      "id": "1774911551518-ay68yaj663",
+      "type": "warn",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "RPA: Endpoint RPA não suportado nesta versão do AdsPower",
+      "timestamp": "2026-03-30T22:59:11.518Z"
+    },
+    {
+      "id": "1774911551515-gqars9c2stw",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Disparando fluxo RPA #RPA_1774630007372",
+      "timestamp": "2026-03-30T22:59:11.515Z"
+    },
+    {
+      "id": "1774911551514-ugbver0w3ka",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Browser aberto para \"Farming – farmingtestes50\"",
+      "timestamp": "2026-03-30T22:59:11.514Z"
+    },
+    {
+      "id": "1774911547252-99y4f7vud35",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Iniciando perfil \"Farming – farmingtestes50\"",
+      "timestamp": "2026-03-30T22:59:07.252Z"
+    },
+    {
+      "id": "1774911547251-rnckeyjmbdo",
+      "type": "info",
+      "profileId": null,
+      "profileName": null,
+      "message": "Iniciando execução para 1 perfil(is)",
+      "timestamp": "2026-03-30T22:59:07.251Z"
+    },
+    {
+      "id": "1774910267555-bwrlh1eeunw",
+      "type": "info",
+      "profileId": null,
+      "profileName": null,
+      "message": "Execução finalizada (interrompida)",
+      "timestamp": "2026-03-30T22:37:47.555Z"
+    },
+    {
+      "id": "1774910267547-nzk423cebjh",
+      "type": "error",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Erro em \"Farming – farmingtestes50\": Execução interrompida pelo usuário",
+      "timestamp": "2026-03-30T22:37:47.547Z"
+    },
+    {
+      "id": "1774910264610-bvewctjtflq",
+      "type": "warn",
+      "profileId": null,
+      "profileName": null,
+      "message": "Worker interrompido manualmente",
+      "timestamp": "2026-03-30T22:37:44.610Z"
+    },
+    {
+      "id": "1774910243475-5k63k8f7oh",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Farming ativo — aguardando 30 minuto(s) (até 20:07:23)",
+      "timestamp": "2026-03-30T22:37:23.475Z"
+    },
+    {
+      "id": "1774910243446-inkco34lnz",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Browser aberto para \"Farming – farmingtestes50\"",
+      "timestamp": "2026-03-30T22:37:23.446Z"
+    },
+    {
+      "id": "1774910239338-gfhn3d9djgv",
+      "type": "info",
+      "profileId": "k1ayoqhh",
+      "profileName": "Farming – farmingtestes50",
+      "message": "Iniciando perfil \"Farming – farmingtestes50\"",
+      "timestamp": "2026-03-30T22:37:19.338Z"
+    },
+    {
+      "id": "1774910239337-xc7m8pv17mc",
+      "type": "info",
+      "profileId": null,
+      "profileName": null,
+      "message": "Iniciando execução para 1 perfil(is)",
+      "timestamp": "2026-03-30T22:37:19.337Z"
+    }
+  ],
+  "accounts": []
+}
