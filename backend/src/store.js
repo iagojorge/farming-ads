@@ -10,22 +10,14 @@ const DEFAULT_STORE = {
   settings: {
     adspowerUrl: 'http://local.adspower.net:50325',
     apiKey: '',
-    rpaFlowId: '',
-    rpaProcessId: '',           // ID do processo RPA Plus (ex: RPA_1774630007372)
-    concurrentProfiles: 1,
-    defaultDurationMinutes: 30,
-    rpaMode: 'auto',
-    timezone: 'America/Sao_Paulo',
     groupName: 'Automatização teste',
-    // Aquecimento automático
-    warmupDays: 21,             // dias de aquecimento por conta
-    warmupDailyTime: '09:00',   // horário de execução diária (HH:MM)
-    warmupSessionMinutes: 30,   // duração de cada sessão diária
+    concurrentBrowsers: 5,
+    timezone: 'America/Sao_Paulo',
   },
   profiles: [],
   schedules: [],
   logs: [],
-  accounts: [], // { email, password, status: 'pending'|'completed', profileId?, createdAt }
+  accounts: [],
 };
 
 let store = null;
@@ -132,20 +124,23 @@ export function getAccounts() {
   return store.accounts;
 }
 
-export function addAccount(email, password, proxy = '') {
+export function addAccount(email, password, proxy = '', recoveryEmail = '') {
   const account = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     email,
     password,
     proxy,
+    recoveryEmail,
+    // Estados: pending → warming → ready_for_ads → synced | error | checkpoint
     status: 'pending',
     profileId: null,
     error: null,
     createdAt: new Date().toISOString(),
-    warmupStatus: 'pending',
     warmupStartDate: null,
     warmupEndDate: null,
+    warmupDaysDone: 0,
     lastWarmupAt: null,
+    adsCustomerId: null,
   };
   store.accounts.push(account);
   persist();
@@ -154,19 +149,21 @@ export function addAccount(email, password, proxy = '') {
 
 export function addAccounts(list) {
   const now = Date.now();
-  const accounts = list.map(({ email, password, proxy }, i) => ({
+  const accounts = list.map(({ email, password, proxy, recoveryEmail }, i) => ({
     id: `${now + i}-${Math.random().toString(36).slice(2)}`,
     email,
     password,
     proxy: proxy || '',
+    recoveryEmail: recoveryEmail || '',
     status: 'pending',
     profileId: null,
     error: null,
     createdAt: new Date().toISOString(),
-    warmupStatus: 'pending',
     warmupStartDate: null,
     warmupEndDate: null,
+    warmupDaysDone: 0,
     lastWarmupAt: null,
+    adsCustomerId: null,
   }));
   store.accounts.push(...accounts);
   persist();
@@ -186,7 +183,6 @@ export function deleteAccount(id) {
   persist();
 }
 
-// Contas com aquecimento ativo
-export function getWarmingAccounts() {
-  return store.accounts.filter((a) => a.warmupStatus === 'warming' && a.profileId);
+export function getAccountsByStatus(status) {
+  return store.accounts.filter((a) => a.status === status);
 }

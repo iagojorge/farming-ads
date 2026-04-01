@@ -130,7 +130,6 @@ async function loginSingleAccount(account) {
     const warmupEndDate = new Date(Date.now() + warmupDays * 24 * 60 * 60 * 1000).toISOString();
     updateAccount(id, {
       status: 'warming',
-      warmupStatus: 'warming',
       warmupStartDate,
       warmupEndDate,
       completedAt: new Date().toISOString(),

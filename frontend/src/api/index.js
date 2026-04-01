@@ -42,7 +42,7 @@ export const api = {
 
   // Accounts
   getAccounts: () => req('GET', '/accounts'),
-  addAccount: (email, password, proxy) => req('POST', '/accounts', { email, password, proxy }),
+  addAccount: (email, password, proxy, recoveryEmail) => req('POST', '/accounts', { email, password, proxy, recoveryEmail }),
   addAccountsBatch: (accounts) => req('POST', '/accounts/batch', { accounts }),
   deleteAccount: (id) => req('DELETE', `/accounts/${id}`),
   checkProxy: (proxy) => req('POST', '/accounts/check-proxy', { proxy }),
@@ -55,6 +55,7 @@ export const api = {
   getWarmupStatus: () => req('GET', '/warmup/status'),
   triggerWarmup: () => req('POST', '/warmup/run'),
   checkExpiredWarmups: () => req('POST', '/warmup/check-expired'),
+  startWarmupAccount: (id) => req('POST', `/accounts/${id}/warmup`),
 };
 
 /**

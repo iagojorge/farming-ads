@@ -1,7 +1,8 @@
 import cron from 'node-cron';
-import { getSettings, getSchedules } from './store.js';
+import { getSchedules } from './store.js';
 import { runProfiles } from './worker.js';
 import { runWarmupCycle, checkExpiredWarmups } from './warmupWorker.js';
+import { TIMINGS } from './warmupTimings.js';
 
 const activeCrons = new Map();
 let warmupCronJob = null;
@@ -29,8 +30,8 @@ export function setupWarmupSchedule() {
     warmupCronJob = null;
   }
 
-  const { warmupDailyTime } = getSettings();
-  const cronExpr = timeToCron(warmupDailyTime || '09:00');
+  const dailyTime = TIMINGS.dailyWarmupTime || '09:00';
+  const cronExpr = timeToCron(dailyTime);
 
   if (!cron.validate(cronExpr)) {
     console.warn(`[scheduler] Expressão de warmup inválida: ${cronExpr}`);
@@ -50,7 +51,7 @@ export function setupWarmupSchedule() {
     { timezone: 'America/Sao_Paulo' },
   );
 
-  console.log(`[scheduler] Aquecimento agendado para: ${warmupDailyTime || '09:00'} (cron: ${cronExpr})`);
+  console.log(`[scheduler] Aquecimento agendado para: ${dailyTime} (cron: ${cronExpr})`);
 }
 
 /**
