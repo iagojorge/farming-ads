@@ -59,6 +59,750 @@
   "schedules": [],
   "logs": [
     {
+      "id": "wu-1775078073524-xawmihhiklg",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – cho80789606@gmail.com",
+      "message": "cho80789606@gmail.com: Assistindo vídeo por 10 minutos",
+      "timestamp": "2026-04-01T21:14:33.524Z"
+    },
+    {
+      "id": "wu-1775078073417-23saowml11m",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – cho80789606@gmail.com",
+      "message": "cho80789606@gmail.com: Clicando em um vídeo",
+      "timestamp": "2026-04-01T21:14:33.417Z"
+    },
+    {
+      "id": "wu-1775078073061-z04hzumdlw",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – shek93877347@gmail.com",
+      "message": "shek93877347@gmail.com: Assistindo vídeo por 10 minutos",
+      "timestamp": "2026-04-01T21:14:33.061Z"
+    },
+    {
+      "id": "wu-1775078072980-p7pzg0irsg",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – shek93877347@gmail.com",
+      "message": "shek93877347@gmail.com: Clicando em um vídeo",
+      "timestamp": "2026-04-01T21:14:32.980Z"
+    },
+    {
+      "id": "wu-1775078065990-kl1clbe72dd",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – shek93877347@gmail.com",
+      "message": "shek93877347@gmail.com: ✓ Idioma alterado para português brasileiro",
+      "timestamp": "2026-04-01T21:14:25.990Z"
+    },
+    {
+      "id": "wu-1775078065378-505gvikk85t",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – cho80789606@gmail.com",
+      "message": "cho80789606@gmail.com: ✓ Idioma alterado para português brasileiro",
+      "timestamp": "2026-04-01T21:14:25.378Z"
+    },
+    {
+      "id": "wu-1775078061174-agr6tw2xeun",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – cho80789606@gmail.com",
+      "message": "cho80789606@gmail.com: ⚠ Idioma não está em português, alterando para pt-BR...",
+      "timestamp": "2026-04-01T21:14:21.174Z"
+    },
+    {
+      "id": "wu-1775078061169-vhfxmm8zt2",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – cho80789606@gmail.com",
+      "message": "cho80789606@gmail.com: Verificando idioma da conta...",
+      "timestamp": "2026-04-01T21:14:21.169Z"
+    },
+    {
+      "id": "wu-1775078061167-02jp447my6o",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – cho80789606@gmail.com",
+      "message": "cho80789606@gmail.com: ✓ Conta sincronizada",
+      "timestamp": "2026-04-01T21:14:21.167Z"
+    },
+    {
+      "id": "wu-1775078060712-wor4nnhie78",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – shek93877347@gmail.com",
+      "message": "shek93877347@gmail.com: ⚠ Idioma não está em português, alterando para pt-BR...",
+      "timestamp": "2026-04-01T21:14:20.712Z"
+    },
+    {
+      "id": "wu-1775078060706-3zxmbozg8z6",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – shek93877347@gmail.com",
+      "message": "shek93877347@gmail.com: Verificando idioma da conta...",
+      "timestamp": "2026-04-01T21:14:20.706Z"
+    },
+    {
+      "id": "wu-1775078060703-54a2erqso3m",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – shek93877347@gmail.com",
+      "message": "shek93877347@gmail.com: ✓ Conta sincronizada",
+      "timestamp": "2026-04-01T21:14:20.703Z"
+    },
+    {
+      "id": "wu-1775078057693-khqppcg65dp",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – shek93877347@gmail.com",
+      "message": "shek93877347@gmail.com: ⚠ Não está logado no YouTube — tentando acessar com conta Google...",
+      "timestamp": "2026-04-01T21:14:17.693Z"
+    },
+    {
+      "id": "wu-1775078057688-icbrwg86jna",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – shek93877347@gmail.com",
+      "message": "shek93877347@gmail.com: Verificando status de login no YouTube...",
+      "timestamp": "2026-04-01T21:14:17.688Z"
+    },
+    {
+      "id": "wu-1775078057686-p872afp9hz",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – shek93877347@gmail.com",
+      "message": "shek93877347@gmail.com: Nenhum termo encontrado, continuando...",
+      "timestamp": "2026-04-01T21:14:17.686Z"
+    },
+    {
+      "id": "wu-1775078057680-cgtg5mh0328",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – shek93877347@gmail.com",
+      "message": "shek93877347@gmail.com: Procurando por termos para aceitar...",
+      "timestamp": "2026-04-01T21:14:17.680Z"
+    },
+    {
+      "id": "wu-1775078056995-6og5yt1g38",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – cho80789606@gmail.com",
+      "message": "cho80789606@gmail.com: ⚠ Não está logado no YouTube — tentando acessar com conta Google...",
+      "timestamp": "2026-04-01T21:14:16.995Z"
+    },
+    {
+      "id": "wu-1775078056987-xryxpmmsngk",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – cho80789606@gmail.com",
+      "message": "cho80789606@gmail.com: Verificando status de login no YouTube...",
+      "timestamp": "2026-04-01T21:14:16.987Z"
+    },
+    {
+      "id": "wu-1775078056985-n7yg16tbpes",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – cho80789606@gmail.com",
+      "message": "cho80789606@gmail.com: Nenhum termo encontrado, continuando...",
+      "timestamp": "2026-04-01T21:14:16.985Z"
+    },
+    {
+      "id": "wu-1775078056977-4uz8nmhz0xx",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – cho80789606@gmail.com",
+      "message": "cho80789606@gmail.com: Procurando por termos para aceitar...",
+      "timestamp": "2026-04-01T21:14:16.977Z"
+    },
+    {
+      "id": "wu-1775078055607-y8h8ah9jixl",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma93931928@gmail.com",
+      "message": "ma93931928@gmail.com: Assistindo vídeo por 10 minutos",
+      "timestamp": "2026-04-01T21:14:15.607Z"
+    },
+    {
+      "id": "wu-1775078055499-qoct2pfap4",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma94883397@gmail.com",
+      "message": "ma94883397@gmail.com: Assistindo vídeo por 10 minutos",
+      "timestamp": "2026-04-01T21:14:15.499Z"
+    },
+    {
+      "id": "wu-1775078055459-8gnsk1ph6xo",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma93931928@gmail.com",
+      "message": "ma93931928@gmail.com: Clicando em um vídeo",
+      "timestamp": "2026-04-01T21:14:15.459Z"
+    },
+    {
+      "id": "wu-1775078055349-6vdki4shfb4",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma94883397@gmail.com",
+      "message": "ma94883397@gmail.com: Clicando em um vídeo",
+      "timestamp": "2026-04-01T21:14:15.349Z"
+    },
+    {
+      "id": "wu-1775078052674-42b290rnc7b",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – shek93877347@gmail.com",
+      "message": "shek93877347@gmail.com: ✓ Página carregou",
+      "timestamp": "2026-04-01T21:14:12.674Z"
+    },
+    {
+      "id": "wu-1775078051973-o36bjcaeek",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – cho80789606@gmail.com",
+      "message": "cho80789606@gmail.com: ✓ Página carregou",
+      "timestamp": "2026-04-01T21:14:11.973Z"
+    },
+    {
+      "id": "wu-1775078049476-9sru5x4mn4r",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – cho80789606@gmail.com",
+      "message": "cho80789606@gmail.com: [Tentativa 1/3] Acessando https://www.youtube.com",
+      "timestamp": "2026-04-01T21:14:09.476Z"
+    },
+    {
+      "id": "wu-1775078049472-4q4tk9zwfo5",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – cho80789606@gmail.com",
+      "message": "cho80789606@gmail.com: Abrindo YouTube e pesquisando: \"decoração de apartamento pequeno\"",
+      "timestamp": "2026-04-01T21:14:09.472Z"
+    },
+    {
+      "id": "wu-1775078049469-m12a8lpuswf",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – cho80789606@gmail.com",
+      "message": "cho80789606@gmail.com: Já logado no Google! Pulando login.",
+      "timestamp": "2026-04-01T21:14:09.469Z"
+    },
+    {
+      "id": "wu-1775078049467-ycp47f5jq3o",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – cho80789606@gmail.com",
+      "message": "cho80789606@gmail.com: ✓ Página carregou",
+      "timestamp": "2026-04-01T21:14:09.467Z"
+    },
+    {
+      "id": "wu-1775078048220-klxpjd0jkd",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma94883397@gmail.com",
+      "message": "ma94883397@gmail.com: ✓ Idioma alterado para português brasileiro",
+      "timestamp": "2026-04-01T21:14:08.220Z"
+    },
+    {
+      "id": "wu-1775078047777-333xuq4zci9",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma93931928@gmail.com",
+      "message": "ma93931928@gmail.com: ✓ Idioma alterado para português brasileiro",
+      "timestamp": "2026-04-01T21:14:07.777Z"
+    },
+    {
+      "id": "wu-1775078043001-my5c9kqk5",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma94883397@gmail.com",
+      "message": "ma94883397@gmail.com: ⚠ Idioma não está em português, alterando para pt-BR...",
+      "timestamp": "2026-04-01T21:14:03.001Z"
+    },
+    {
+      "id": "wu-1775078042994-ii1a40bdndn",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma94883397@gmail.com",
+      "message": "ma94883397@gmail.com: Verificando idioma da conta...",
+      "timestamp": "2026-04-01T21:14:02.994Z"
+    },
+    {
+      "id": "wu-1775078042993-fhbhsskq2f",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma94883397@gmail.com",
+      "message": "ma94883397@gmail.com: ✓ Conta sincronizada",
+      "timestamp": "2026-04-01T21:14:02.993Z"
+    },
+    {
+      "id": "wu-1775078042643-ba6fpud2tho",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma93931928@gmail.com",
+      "message": "ma93931928@gmail.com: ⚠ Idioma não está em português, alterando para pt-BR...",
+      "timestamp": "2026-04-01T21:14:02.643Z"
+    },
+    {
+      "id": "wu-1775078042637-zta0pq0s43",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma93931928@gmail.com",
+      "message": "ma93931928@gmail.com: Verificando idioma da conta...",
+      "timestamp": "2026-04-01T21:14:02.637Z"
+    },
+    {
+      "id": "wu-1775078042634-9f8dm3cnwfi",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma93931928@gmail.com",
+      "message": "ma93931928@gmail.com: ✓ Conta sincronizada",
+      "timestamp": "2026-04-01T21:14:02.634Z"
+    },
+    {
+      "id": "wu-1775078040195-iu6fzg763o8",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma94883397@gmail.com",
+      "message": "ma94883397@gmail.com: ⚠ Não está logado no YouTube — tentando acessar com conta Google...",
+      "timestamp": "2026-04-01T21:14:00.195Z"
+    },
+    {
+      "id": "wu-1775078040188-h67l25db8aa",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma94883397@gmail.com",
+      "message": "ma94883397@gmail.com: Verificando status de login no YouTube...",
+      "timestamp": "2026-04-01T21:14:00.188Z"
+    },
+    {
+      "id": "wu-1775078040186-n63ozlseyvf",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma94883397@gmail.com",
+      "message": "ma94883397@gmail.com: Nenhum termo encontrado, continuando...",
+      "timestamp": "2026-04-01T21:14:00.186Z"
+    },
+    {
+      "id": "wu-1775078040176-up5ri0upu2",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma94883397@gmail.com",
+      "message": "ma94883397@gmail.com: Procurando por termos para aceitar...",
+      "timestamp": "2026-04-01T21:14:00.176Z"
+    },
+    {
+      "id": "wu-1775078039855-pr5batx4xxe",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma93931928@gmail.com",
+      "message": "ma93931928@gmail.com: ⚠ Não está logado no YouTube — tentando acessar com conta Google...",
+      "timestamp": "2026-04-01T21:13:59.855Z"
+    },
+    {
+      "id": "wu-1775078039838-5bd0fxj78ar",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma93931928@gmail.com",
+      "message": "ma93931928@gmail.com: Verificando status de login no YouTube...",
+      "timestamp": "2026-04-01T21:13:59.838Z"
+    },
+    {
+      "id": "wu-1775078039835-rd19zlqetn",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma93931928@gmail.com",
+      "message": "ma93931928@gmail.com: Nenhum termo encontrado, continuando...",
+      "timestamp": "2026-04-01T21:13:59.835Z"
+    },
+    {
+      "id": "wu-1775078039820-h3ewsirvc1",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma93931928@gmail.com",
+      "message": "ma93931928@gmail.com: Procurando por termos para aceitar...",
+      "timestamp": "2026-04-01T21:13:59.820Z"
+    },
+    {
+      "id": "wu-1775078035173-3a6kb5tyzrx",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma94883397@gmail.com",
+      "message": "ma94883397@gmail.com: ✓ Página carregou",
+      "timestamp": "2026-04-01T21:13:55.173Z"
+    },
+    {
+      "id": "wu-1775078034811-fscf1hk7tgb",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma93931928@gmail.com",
+      "message": "ma93931928@gmail.com: ✓ Página carregou",
+      "timestamp": "2026-04-01T21:13:54.811Z"
+    },
+    {
+      "id": "wu-1775078032726-o3jw0gp94sc",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma93931928@gmail.com",
+      "message": "ma93931928@gmail.com: [Tentativa 1/3] Acessando https://www.youtube.com",
+      "timestamp": "2026-04-01T21:13:52.726Z"
+    },
+    {
+      "id": "wu-1775078032722-qdqz050u1g",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma93931928@gmail.com",
+      "message": "ma93931928@gmail.com: Abrindo YouTube e pesquisando: \"como aprender inglês rápido\"",
+      "timestamp": "2026-04-01T21:13:52.722Z"
+    },
+    {
+      "id": "wu-1775078032720-ditxgi3jezj",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma93931928@gmail.com",
+      "message": "ma93931928@gmail.com: Já logado no Google! Pulando login.",
+      "timestamp": "2026-04-01T21:13:52.720Z"
+    },
+    {
+      "id": "wu-1775078032718-qiktlwe5pba",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma93931928@gmail.com",
+      "message": "ma93931928@gmail.com: ✓ Página carregou",
+      "timestamp": "2026-04-01T21:13:52.718Z"
+    },
+    {
+      "id": "wu-1775078032295-x67jezqv6i",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma94883397@gmail.com",
+      "message": "ma94883397@gmail.com: [Tentativa 1/3] Acessando https://www.youtube.com",
+      "timestamp": "2026-04-01T21:13:52.295Z"
+    },
+    {
+      "id": "wu-1775078032291-1dfz2xuqvf7",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma94883397@gmail.com",
+      "message": "ma94883397@gmail.com: Abrindo YouTube e pesquisando: \"como cuidar de plantas\"",
+      "timestamp": "2026-04-01T21:13:52.291Z"
+    },
+    {
+      "id": "wu-1775078032289-wvork2gqvr",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma94883397@gmail.com",
+      "message": "ma94883397@gmail.com: Já logado no Google! Pulando login.",
+      "timestamp": "2026-04-01T21:13:52.289Z"
+    },
+    {
+      "id": "wu-1775078032287-03hl5htf5lwd",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma94883397@gmail.com",
+      "message": "ma94883397@gmail.com: ✓ Página carregou",
+      "timestamp": "2026-04-01T21:13:52.287Z"
+    },
+    {
+      "id": "wu-1775078032267-an6e7wdzumu",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – shek93877347@gmail.com",
+      "message": "shek93877347@gmail.com: [Tentativa 1/3] Acessando https://www.youtube.com",
+      "timestamp": "2026-04-01T21:13:52.267Z"
+    },
+    {
+      "id": "wu-1775078032263-25aij3yihk6",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – shek93877347@gmail.com",
+      "message": "shek93877347@gmail.com: Abrindo YouTube e pesquisando: \"yoga para iniciantes\"",
+      "timestamp": "2026-04-01T21:13:52.263Z"
+    },
+    {
+      "id": "wu-1775078032261-3zyqpiir3vv",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – shek93877347@gmail.com",
+      "message": "shek93877347@gmail.com: Já logado no Google! Pulando login.",
+      "timestamp": "2026-04-01T21:13:52.261Z"
+    },
+    {
+      "id": "wu-1775078032258-hk40t5goa8",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – shek93877347@gmail.com",
+      "message": "shek93877347@gmail.com: ✓ Página carregou",
+      "timestamp": "2026-04-01T21:13:52.258Z"
+    },
+    {
+      "id": "wu-1775078025564-87nil0x7zu2",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – cho80789606@gmail.com",
+      "message": "cho80789606@gmail.com: [Tentativa 1/3] Acessando https://accounts.google.com/signin/v2/identifier",
+      "timestamp": "2026-04-01T21:13:45.564Z"
+    },
+    {
+      "id": "wu-1775078025561-fcfcerghdt",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – cho80789606@gmail.com",
+      "message": "cho80789606@gmail.com: Navegando para accounts.google.com",
+      "timestamp": "2026-04-01T21:13:45.561Z"
+    },
+    {
+      "id": "wu-1775078025533-b7u7wprqbaa",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma94883397@gmail.com",
+      "message": "ma94883397@gmail.com: [Tentativa 1/3] Acessando https://accounts.google.com/signin/v2/identifier",
+      "timestamp": "2026-04-01T21:13:45.533Z"
+    },
+    {
+      "id": "wu-1775078025530-p2l44jo7aio",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma94883397@gmail.com",
+      "message": "ma94883397@gmail.com: Navegando para accounts.google.com",
+      "timestamp": "2026-04-01T21:13:45.530Z"
+    },
+    {
+      "id": "wu-1775078025502-zbeq4ack8m",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma93931928@gmail.com",
+      "message": "ma93931928@gmail.com: [Tentativa 1/3] Acessando https://accounts.google.com/signin/v2/identifier",
+      "timestamp": "2026-04-01T21:13:45.502Z"
+    },
+    {
+      "id": "wu-1775078025499-q76vnhpfg3i",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma93931928@gmail.com",
+      "message": "ma93931928@gmail.com: Navegando para accounts.google.com",
+      "timestamp": "2026-04-01T21:13:45.499Z"
+    },
+    {
+      "id": "wu-1775078025470-2obj3bezvzk",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – shek93877347@gmail.com",
+      "message": "shek93877347@gmail.com: [Tentativa 1/3] Acessando https://accounts.google.com/signin/v2/identifier",
+      "timestamp": "2026-04-01T21:13:45.470Z"
+    },
+    {
+      "id": "wu-1775078025468-gxd318vd1hi",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – shek93877347@gmail.com",
+      "message": "shek93877347@gmail.com: Navegando para accounts.google.com",
+      "timestamp": "2026-04-01T21:13:45.468Z"
+    },
+    {
+      "id": "wu-1775078021229-344rs65wts3",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – shek93877347@gmail.com",
+      "message": "shek93877347@gmail.com: Iniciando browser para shek93877347@gmail.com",
+      "timestamp": "2026-04-01T21:13:41.229Z"
+    },
+    {
+      "id": "wu-1775078021227-w0y5xo94a3",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – shek93877347@gmail.com",
+      "message": "shek93877347@gmail.com: ✓ Tunnel criado: http://localhost:59076",
+      "timestamp": "2026-04-01T21:13:41.227Z"
+    },
+    {
+      "id": "wu-1775078021223-l2myiotxjp",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma94883397@gmail.com",
+      "message": "ma94883397@gmail.com: Iniciando browser para ma94883397@gmail.com",
+      "timestamp": "2026-04-01T21:13:41.223Z"
+    },
+    {
+      "id": "wu-1775078021221-ciqt5n2r98",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma94883397@gmail.com",
+      "message": "ma94883397@gmail.com: ✓ Tunnel criado: http://localhost:59075",
+      "timestamp": "2026-04-01T21:13:41.221Z"
+    },
+    {
+      "id": "wu-1775078021218-7rmmvkvfbgs",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – cho80789606@gmail.com",
+      "message": "cho80789606@gmail.com: Iniciando browser para cho80789606@gmail.com",
+      "timestamp": "2026-04-01T21:13:41.218Z"
+    },
+    {
+      "id": "wu-1775078021215-45sxwo04ns6",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – cho80789606@gmail.com",
+      "message": "cho80789606@gmail.com: ✓ Tunnel criado: http://localhost:59074",
+      "timestamp": "2026-04-01T21:13:41.215Z"
+    },
+    {
+      "id": "wu-1775078021208-j12yxuhgnk8",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma93931928@gmail.com",
+      "message": "ma93931928@gmail.com: Iniciando browser para ma93931928@gmail.com",
+      "timestamp": "2026-04-01T21:13:41.208Z"
+    },
+    {
+      "id": "wu-1775078021206-7owhrpe3n87",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma93931928@gmail.com",
+      "message": "ma93931928@gmail.com: ✓ Tunnel criado: http://localhost:54121",
+      "timestamp": "2026-04-01T21:13:41.206Z"
+    },
+    {
+      "id": "wu-1775078021201-405li3h5fwu",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – shek93877347@gmail.com",
+      "message": "shek93877347@gmail.com: Criando tunnel SOCKS5 com autenticação...",
+      "timestamp": "2026-04-01T21:13:41.201Z"
+    },
+    {
+      "id": "wu-1775078021200-86jxnfdl0ot",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – shek93877347@gmail.com",
+      "message": "shek93877347@gmail.com: [DEBUG] Parsed: type=socks5, host=23.26.234.38, hasAuth=axt399221234",
+      "timestamp": "2026-04-01T21:13:41.200Z"
+    },
+    {
+      "id": "wu-1775078021198-s93rtcn6hnp",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – shek93877347@gmail.com",
+      "message": "shek93877347@gmail.com: [DEBUG] Proxy string: 23.26.234.38:22326:br7223882234:axt399221234",
+      "timestamp": "2026-04-01T21:13:41.198Z"
+    },
+    {
+      "id": "wu-1775078021197-iruuojrehok",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – shek93877347@gmail.com",
+      "message": "shek93877347@gmail.com: Iniciando sessão de aquecimento (dia 1) — ~21 dia(s) restante(s)",
+      "timestamp": "2026-04-01T21:13:41.197Z"
+    },
+    {
+      "id": "wu-1775078021195-5f86msdh2ln",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma94883397@gmail.com",
+      "message": "ma94883397@gmail.com: Criando tunnel SOCKS5 com autenticação...",
+      "timestamp": "2026-04-01T21:13:41.195Z"
+    },
+    {
+      "id": "wu-1775078021194-g6q2xt8d97v",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma94883397@gmail.com",
+      "message": "ma94883397@gmail.com: [DEBUG] Parsed: type=socks5, host=23.26.234.187, hasAuth=axt399221234",
+      "timestamp": "2026-04-01T21:13:41.194Z"
+    },
+    {
+      "id": "wu-1775078021193-0p03w677q5so",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma94883397@gmail.com",
+      "message": "ma94883397@gmail.com: [DEBUG] Proxy string: 23.26.234.187:22326:br7223882234:axt399221234",
+      "timestamp": "2026-04-01T21:13:41.193Z"
+    },
+    {
+      "id": "wu-1775078021191-p43mewyfya7",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma94883397@gmail.com",
+      "message": "ma94883397@gmail.com: Iniciando sessão de aquecimento (dia 1) — ~21 dia(s) restante(s)",
+      "timestamp": "2026-04-01T21:13:41.191Z"
+    },
+    {
+      "id": "wu-1775078021187-1rw049zq2db",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – cho80789606@gmail.com",
+      "message": "cho80789606@gmail.com: Criando tunnel SOCKS5 com autenticação...",
+      "timestamp": "2026-04-01T21:13:41.187Z"
+    },
+    {
+      "id": "wu-1775078021186-xbejo67cc4i",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – cho80789606@gmail.com",
+      "message": "cho80789606@gmail.com: [DEBUG] Parsed: type=socks5, host=23.26.234.137, hasAuth=axt399221234",
+      "timestamp": "2026-04-01T21:13:41.186Z"
+    },
+    {
+      "id": "wu-1775078021184-a1ny5n8cyhd",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – cho80789606@gmail.com",
+      "message": "cho80789606@gmail.com: [DEBUG] Proxy string: 23.26.234.137:22326:br7223882234:axt399221234",
+      "timestamp": "2026-04-01T21:13:41.184Z"
+    },
+    {
+      "id": "wu-1775078021182-zh00chdzoi",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – cho80789606@gmail.com",
+      "message": "cho80789606@gmail.com: Iniciando sessão de aquecimento (dia 1) — ~21 dia(s) restante(s)",
+      "timestamp": "2026-04-01T21:13:41.182Z"
+    },
+    {
+      "id": "wu-1775078021173-8ezz758ltzy",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma93931928@gmail.com",
+      "message": "ma93931928@gmail.com: Criando tunnel SOCKS5 com autenticação...",
+      "timestamp": "2026-04-01T21:13:41.173Z"
+    },
+    {
+      "id": "wu-1775078021171-df9tp1bvgb",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma93931928@gmail.com",
+      "message": "ma93931928@gmail.com: [DEBUG] Parsed: type=socks5, host=181.215.54.200, hasAuth=axt399221234",
+      "timestamp": "2026-04-01T21:13:41.171Z"
+    },
+    {
+      "id": "wu-1775078021169-4c4jkpc2kw2",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma93931928@gmail.com",
+      "message": "ma93931928@gmail.com: [DEBUG] Proxy string: 181.215.54.200:22326:br7223882234:axt399221234",
+      "timestamp": "2026-04-01T21:13:41.169Z"
+    },
+    {
+      "id": "wu-1775078021166-5ss08irginp",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – ma93931928@gmail.com",
+      "message": "ma93931928@gmail.com: Iniciando sessão de aquecimento (dia 1) — ~21 dia(s) restante(s)",
+      "timestamp": "2026-04-01T21:13:41.166Z"
+    },
+    {
+      "id": "wu-1775078021160-z53gkvkto8h",
+      "type": "info",
+      "profileId": null,
+      "profileName": "Warmup – sistema",
+      "message": "Iniciando ciclo de aquecimento para 4 conta(s)",
+      "timestamp": "2026-04-01T21:13:41.160Z"
+    },
+    {
       "id": "wu-1775072546210-bhpbu5omh7",
       "type": "info",
       "profileId": null,
@@ -3313,750 +4057,6 @@
       "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
       "message": "choi74484041@gmail.comchoi74484041:   ✓ Avançou: \"Avançar\"",
       "timestamp": "2026-04-01T06:31:27.155Z"
-    },
-    {
-      "id": "wu-1775025087117-r1y6fp3w0op",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041:   📄 Texto: Faça login | com sua Conta do Google. Essa conta ficará disponível para outros apps do Google no navegador. | E-mail ou telefone | Não foi possível encontrar sua Conta do Google | Esqueceu o e-mail? | Não está no seu computador? Use o modo visitante para fazer login com privacidade. Saiba como usar o modo visitante. | Avançar | Criar conta | Português (Brasil) | Ajuda | Privacidade | Termos",
-      "timestamp": "2026-04-01T06:31:27.117Z"
-    },
-    {
-      "id": "wu-1775025087116-hz61k4l5o2b",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041: [Segurança round 8] URL: https://accounts.google.com/v3/signin/identifier?dsh=S-1356445554%3A1775025024226769&hl=pt-BR&flowName=GlifWebSignIn&flowEntry=ServiceLogin&ifkv=AT1y2_XzclzBV-R9mMdzKdz0PJjfLu0Ww6Vti6zEBrKoFVJLlfP_0_r83sI2wMnAHB_FxDut7QMxKQ",
-      "timestamp": "2026-04-01T06:31:27.116Z"
-    },
-    {
-      "id": "wu-1775025082095-bge7rwdho7e",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041:   ✓ Avançou: \"Avançar\"",
-      "timestamp": "2026-04-01T06:31:22.095Z"
-    },
-    {
-      "id": "wu-1775025082060-szuifaeub5n",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041:   📄 Texto: Faça login | com sua Conta do Google. Essa conta ficará disponível para outros apps do Google no navegador. | E-mail ou telefone | Não foi possível encontrar sua Conta do Google | Esqueceu o e-mail? | Não está no seu computador? Use o modo visitante para fazer login com privacidade. Saiba como usar o modo visitante. | Avançar | Criar conta | Português (Brasil) | Ajuda | Privacidade | Termos",
-      "timestamp": "2026-04-01T06:31:22.060Z"
-    },
-    {
-      "id": "wu-1775025082057-al4ks6u6zsv",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041: [Segurança round 7] URL: https://accounts.google.com/v3/signin/identifier?dsh=S-1356445554%3A1775025024226769&hl=pt-BR&flowName=GlifWebSignIn&flowEntry=ServiceLogin&ifkv=AT1y2_XzclzBV-R9mMdzKdz0PJjfLu0Ww6Vti6zEBrKoFVJLlfP_0_r83sI2wMnAHB_FxDut7QMxKQ",
-      "timestamp": "2026-04-01T06:31:22.057Z"
-    },
-    {
-      "id": "wu-1775025080681-ix7jkifr02o",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: Assistindo vídeo por 10 minutos",
-      "timestamp": "2026-04-01T06:31:20.681Z"
-    },
-    {
-      "id": "wu-1775025080596-1zlqtkviciq",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: Clicando em um vídeo",
-      "timestamp": "2026-04-01T06:31:20.596Z"
-    },
-    {
-      "id": "wu-1775025077039-400t77dxhn",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041:   ✓ Avançou: \"Avançar\"",
-      "timestamp": "2026-04-01T06:31:17.039Z"
-    },
-    {
-      "id": "wu-1775025076996-u2sktogxty",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041:   📄 Texto: Faça login | com sua Conta do Google. Essa conta ficará disponível para outros apps do Google no navegador. | E-mail ou telefone | Não foi possível encontrar sua Conta do Google | Esqueceu o e-mail? | Não está no seu computador? Use o modo visitante para fazer login com privacidade. Saiba como usar o modo visitante. | Avançar | Criar conta | Português (Brasil) | Ajuda | Privacidade | Termos",
-      "timestamp": "2026-04-01T06:31:16.996Z"
-    },
-    {
-      "id": "wu-1775025076995-ofxbtmtzeuc",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041: [Segurança round 6] URL: https://accounts.google.com/v3/signin/identifier?dsh=S-1356445554%3A1775025024226769&hl=pt-BR&flowName=GlifWebSignIn&flowEntry=ServiceLogin&ifkv=AT1y2_XzclzBV-R9mMdzKdz0PJjfLu0Ww6Vti6zEBrKoFVJLlfP_0_r83sI2wMnAHB_FxDut7QMxKQ",
-      "timestamp": "2026-04-01T06:31:16.995Z"
-    },
-    {
-      "id": "wu-1775025072550-5fa3thfy0tp",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: ✓ Conta sincronizada",
-      "timestamp": "2026-04-01T06:31:12.550Z"
-    },
-    {
-      "id": "wu-1775025071966-iyy3bgbx1x",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041:   ✓ Avançou: \"Avançar\"",
-      "timestamp": "2026-04-01T06:31:11.966Z"
-    },
-    {
-      "id": "wu-1775025071930-hekotzho5qj",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041:   📄 Texto: Faça login | com sua Conta do Google. Essa conta ficará disponível para outros apps do Google no navegador. | E-mail ou telefone | Não foi possível encontrar sua Conta do Google | Esqueceu o e-mail? | Não está no seu computador? Use o modo visitante para fazer login com privacidade. Saiba como usar o modo visitante. | Avançar | Criar conta | Português (Brasil) | Ajuda | Privacidade | Termos",
-      "timestamp": "2026-04-01T06:31:11.930Z"
-    },
-    {
-      "id": "wu-1775025071928-tia5wiv91n",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041: [Segurança round 5] URL: https://accounts.google.com/v3/signin/identifier?dsh=S-1356445554%3A1775025024226769&hl=pt-BR&flowName=GlifWebSignIn&flowEntry=ServiceLogin&ifkv=AT1y2_XzclzBV-R9mMdzKdz0PJjfLu0Ww6Vti6zEBrKoFVJLlfP_0_r83sI2wMnAHB_FxDut7QMxKQ",
-      "timestamp": "2026-04-01T06:31:11.928Z"
-    },
-    {
-      "id": "wu-1775025068614-f2pk4rks5ok",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: ⚠ Não está logado no YouTube — tentando acessar com conta Google...",
-      "timestamp": "2026-04-01T06:31:08.614Z"
-    },
-    {
-      "id": "wu-1775025068611-3d38usldwdm",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: Verificando status de login no YouTube...",
-      "timestamp": "2026-04-01T06:31:08.611Z"
-    },
-    {
-      "id": "wu-1775025068610-asgdgigzrum",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: Nenhum termo encontrado, continuando...",
-      "timestamp": "2026-04-01T06:31:08.610Z"
-    },
-    {
-      "id": "wu-1775025068604-4cfa5cf1qhg",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: Procurando por termos para aceitar...",
-      "timestamp": "2026-04-01T06:31:08.604Z"
-    },
-    {
-      "id": "wu-1775025066894-e7gjl3vz2j",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041:   ✓ Avançou: \"Avançar\"",
-      "timestamp": "2026-04-01T06:31:06.894Z"
-    },
-    {
-      "id": "wu-1775025066849-0uec1ij2r5w",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041:   📄 Texto: Faça login | com sua Conta do Google. Essa conta ficará disponível para outros apps do Google no navegador. | E-mail ou telefone | Não foi possível encontrar sua Conta do Google | Esqueceu o e-mail? | Não está no seu computador? Use o modo visitante para fazer login com privacidade. Saiba como usar o modo visitante. | Avançar | Criar conta | Português (Brasil) | Ajuda | Privacidade | Termos",
-      "timestamp": "2026-04-01T06:31:06.849Z"
-    },
-    {
-      "id": "wu-1775025066845-pxaa7328sm",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041: [Segurança round 4] URL: https://accounts.google.com/v3/signin/identifier?dsh=S-1356445554%3A1775025024226769&hl=pt-BR&flowName=GlifWebSignIn&flowEntry=ServiceLogin&ifkv=AT1y2_XzclzBV-R9mMdzKdz0PJjfLu0Ww6Vti6zEBrKoFVJLlfP_0_r83sI2wMnAHB_FxDut7QMxKQ",
-      "timestamp": "2026-04-01T06:31:06.845Z"
-    },
-    {
-      "id": "wu-1775025063588-pc0vp8s1gh",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: ✓ Página carregou",
-      "timestamp": "2026-04-01T06:31:03.588Z"
-    },
-    {
-      "id": "wu-1775025061829-vuyouasex8e",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041:   ✓ Avançou: \"Avançar\"",
-      "timestamp": "2026-04-01T06:31:01.829Z"
-    },
-    {
-      "id": "wu-1775025061775-jzib07qub5c",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041:   📄 Texto: Faça login | com sua Conta do Google. Essa conta ficará disponível para outros apps do Google no navegador. | E-mail ou telefone | Não foi possível encontrar sua Conta do Google | Esqueceu o e-mail? | Não está no seu computador? Use o modo visitante para fazer login com privacidade. Saiba como usar o modo visitante. | Avançar | Criar conta | Português (Brasil) | Ajuda | Privacidade | Termos",
-      "timestamp": "2026-04-01T06:31:01.775Z"
-    },
-    {
-      "id": "wu-1775025061773-3qi8un1nkvh",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041: [Segurança round 3] URL: https://accounts.google.com/v3/signin/identifier?dsh=S-1356445554%3A1775025024226769&hl=pt-BR&flowName=GlifWebSignIn&flowEntry=ServiceLogin&ifkv=AT1y2_XzclzBV-R9mMdzKdz0PJjfLu0Ww6Vti6zEBrKoFVJLlfP_0_r83sI2wMnAHB_FxDut7QMxKQ",
-      "timestamp": "2026-04-01T06:31:01.773Z"
-    },
-    {
-      "id": "wu-1775025059411-y59bmqouoh",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: [Tentativa 1/3] Acessando https://www.youtube.com",
-      "timestamp": "2026-04-01T06:30:59.411Z"
-    },
-    {
-      "id": "wu-1775025059409-ujscbmmc0x8",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: Abrindo YouTube e pesquisando: \"decoração de apartamento pequeno\"",
-      "timestamp": "2026-04-01T06:30:59.409Z"
-    },
-    {
-      "id": "wu-1775025059409-o0r4plbzo4",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: ✓ Login no Google concluído!",
-      "timestamp": "2026-04-01T06:30:59.409Z"
-    },
-    {
-      "id": "wu-1775025059408-mfwtqj9u75b",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com:   📄 Texto: 跳至主內容 | 帳戶 | 說明 | 首頁 | 首頁 | 個人資料 | 個人資料 | 安全性與登入 | 安全性與登入 | Google 密碼 | Google 密碼 | 第三方應用程式和服務 | 第三方應用程式和服務 | 資料和私隱 | 資料和私隱 | 使用者和分享 | 使用者和分享 | 付款和訂閱 | 付款和訂閱 | So Ling Ling | so95113193@gmail.com | search | 我的密碼 | 裝置數目 | 密碼管理工具 | 我的活動 | 電郵 | 重要安全警示 | 有人試圖使用您的密碼進行可疑的登入活動 | 查看活動 | 顯示更多 | 3 | 只有您才可看到自己的設定。建議您檢查「地圖」、「搜尋」或其他常用 Google 服務的相關設定。Google 致力保護您資料的私隱和安全。 瞭解詳情 | 私隱設定條款說明關於",
-      "timestamp": "2026-04-01T06:30:59.408Z"
-    },
-    {
-      "id": "wu-1775025059407-bvqdzmwue4c",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: [Segurança round 2] URL: https://myaccount.google.com/?utm_source=sign_in_no_continue",
-      "timestamp": "2026-04-01T06:30:59.407Z"
-    },
-    {
-      "id": "wu-1775025056768-83oaedkkb0l",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041:   ✓ Avançou: \"Avançar\"",
-      "timestamp": "2026-04-01T06:30:56.768Z"
-    },
-    {
-      "id": "wu-1775025056717-mli587uh79i",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041:   📄 Texto: Faça login | com sua Conta do Google. Essa conta ficará disponível para outros apps do Google no navegador. | E-mail ou telefone | Não foi possível encontrar sua Conta do Google | Esqueceu o e-mail? | Não está no seu computador? Use o modo visitante para fazer login com privacidade. Saiba como usar o modo visitante. | Avançar | Criar conta | Português (Brasil) | Ajuda | Privacidade | Termos",
-      "timestamp": "2026-04-01T06:30:56.717Z"
-    },
-    {
-      "id": "wu-1775025056715-uj10vm24fri",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041: [Segurança round 2] URL: https://accounts.google.com/v3/signin/identifier?dsh=S-1356445554%3A1775025024226769&hl=pt-BR&flowName=GlifWebSignIn&flowEntry=ServiceLogin&ifkv=AT1y2_XzclzBV-R9mMdzKdz0PJjfLu0Ww6Vti6zEBrKoFVJLlfP_0_r83sI2wMnAHB_FxDut7QMxKQ",
-      "timestamp": "2026-04-01T06:30:56.715Z"
-    },
-    {
-      "id": "wu-1775025052382-aeuv05h24nf",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com:   ✓ Email de recuperação enviado!",
-      "timestamp": "2026-04-01T06:30:52.382Z"
-    },
-    {
-      "id": "wu-1775025051692-qnt375r2ao",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041:   ✓ Avançou: \"Avançar\"",
-      "timestamp": "2026-04-01T06:30:51.692Z"
-    },
-    {
-      "id": "wu-1775025051654-n8pn029e9mb",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041:   📄 Texto: Faça login | com sua Conta do Google. Essa conta ficará disponível para outros apps do Google no navegador. | E-mail ou telefone | Não foi possível encontrar sua Conta do Google | Esqueceu o e-mail? | Não está no seu computador? Use o modo visitante para fazer login com privacidade. Saiba como usar o modo visitante. | Avançar | Criar conta | Português (Brasil) | Ajuda | Privacidade | Termos",
-      "timestamp": "2026-04-01T06:30:51.654Z"
-    },
-    {
-      "id": "wu-1775025051652-067ca8yugynp",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041: [Segurança round 1] URL: https://accounts.google.com/v3/signin/identifier?dsh=S-1356445554%3A1775025024226769&hl=pt-BR&flowName=GlifWebSignIn&flowEntry=ServiceLogin&ifkv=AT1y2_XzclzBV-R9mMdzKdz0PJjfLu0Ww6Vti6zEBrKoFVJLlfP_0_r83sI2wMnAHB_FxDut7QMxKQ",
-      "timestamp": "2026-04-01T06:30:51.652Z"
-    },
-    {
-      "id": "wu-1775025051598-dxq651ofry",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – farmingtestes50@gmail.com",
-      "message": "farmingtestes50@gmail.com: Assistindo vídeo por 10 minutos",
-      "timestamp": "2026-04-01T06:30:51.598Z"
-    },
-    {
-      "id": "wu-1775025049639-gpzn361wdws",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041: Campo de senha não apareceu — pode já estar logado ou em outra tela",
-      "timestamp": "2026-04-01T06:30:49.639Z"
-    },
-    {
-      "id": "wu-1775025049008-2xj3unvjst3",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com:   Digitando email de recuperação: bestso951131934283@teml.net",
-      "timestamp": "2026-04-01T06:30:49.008Z"
-    },
-    {
-      "id": "wu-1775025048969-dz69x6zbjd",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – farmingtestes50@gmail.com",
-      "message": "farmingtestes50@gmail.com: Clicando em um vídeo",
-      "timestamp": "2026-04-01T06:30:48.969Z"
-    },
-    {
-      "id": "wu-1775025044986-k5mwghoc8r7",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com:   ✓ Selecionou opção: challengetype-12",
-      "timestamp": "2026-04-01T06:30:44.986Z"
-    },
-    {
-      "id": "wu-1775025044979-za9ept5mzni",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com:   🔍 Elementos: [{\"tag\":\"DIV\",\"text\":\"window.wiz_progress&&window.wiz_progress();window.wiz_tick&&window.wiz_tick('chA7fe');(function(){'u\",\"role\":null,\"ct\":null},{\"tag\":\"DIV\",\"text\":\"\",\"role\":null,\"ct\":null},{\"tag\":\"DIV\",\"text\":\"\",\"role\":\"progressbar\",\"ct\":null},{\"tag\":\"DIV\",\"text\":\"\",\"role\":null,\"ct\":null},{\"tag\":\"DIV\",\"text\":\"\",\"role\":null,\"ct\":null},{\"tag\":\"DIV\",\"text\":\"Confirme que é vocêPara proteger sua conta, o Google quer confirmar se é realmente você que está ten\",\"role\":null,\"ct\":null},{\"tag\":\"DIV\",\"text\":\"\",\"role\":null,\"ct\":null},{\"tag\":\"DIV\",\"text\":\"Confirme que é vocêPara proteger sua conta, o Google quer confirmar se é realmente você que está ten\",\"role\":null,\"ct\":null},{\"tag\":\"DIV\",\"text\":\"Para proteger sua conta, o Google quer confirmar se é realmente você que está tentando fazer login. \",\"role\":null,\"ct\":null},{\"tag\":\"A\",\"text\":\"Saiba mais\",\"role\":null,\"ct\":null},{\"tag\":\"DIV\",\"text\":\"so95113193@gmail.com\",\"role\":\"link\",\"ct\":null},{\"tag\":\"DIV\",\"text\":\"so95113193@gmail.com\",\"role\":null,\"ct\":null},{\"tag\":\"DIV\",\"text\":\"Excesso de tentativas falhasEscolha como fazer login:Receber um código de verificação em bes••••••••\",\"role\":null,\"ct\":null},{\"tag\":\"DIV\",\"text\":\"Excesso de tentativas falhasEscolha como fazer login:Receber um código de verificação em bes••••••••\",\"role\":null,\"ct\":null},{\"tag\":\"DIV\",\"text\":\"Excesso de tentativas falhasEscolha como fazer login:Receber um código de verificação em bes••••••••\",\"role\":null,\"ct\":null}]",
-      "timestamp": "2026-04-01T06:30:44.979Z"
-    },
-    {
-      "id": "wu-1775025044971-l1ekfxun3gr",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com:   🔐 Tela de verificação detectada — fluxo de email de recuperação...",
-      "timestamp": "2026-04-01T06:30:44.971Z"
-    },
-    {
-      "id": "wu-1775025044969-v049xwu2s8i",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com:   📄 Texto: Confirme que é você | Para proteger sua conta, o Google quer confirmar se é realmente você que está tentando fazer login. Saiba mais | so95113193@gmail.com | Escolha como fazer login: | Receber um código de verificação em bes•••••••••••••••@t•••.net | Use outro smartphone ou computador para concluir o login | Confirme seu e-mail de recuperação | Tentar de outro jeito | Português (Brasil) | Ajuda | Privacidade | Termos | Confirme que é você Para proteger sua conta, o Google quer confirmar se é realmente você que está tentando fazer login. Saiba mais",
-      "timestamp": "2026-04-01T06:30:44.969Z"
-    },
-    {
-      "id": "wu-1775025044967-twfv1q4p25i",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: [Segurança round 1] URL: https://accounts.google.com/v3/signin/challenge/selection?TL=AIgtPP35C6Ob5yX8blucOb_bKLRdO1_8JpBr5gdstuagdryPHzr-JjmoaiDVRX0Z&checkConnection=youtube%3A424&checkedDomains=youtube&dsh=S271553589%3A1775025024382645&flowEntry=ServiceLogin&flowName=GlifWebSignIn&hl=pt-BR&ifkv=AT1y2_WTfm1G8bRQztkMIguGp443gVofOJ7RNeLyGJZq6eox-nUpkBr5kMBzfWwoI7mKQ6KwVT3m&lid=2&pstMsg=1",
-      "timestamp": "2026-04-01T06:30:44.967Z"
-    },
-    {
-      "id": "wu-1775025041316-fdvu122mqwj",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – farmingtestes50@gmail.com",
-      "message": "farmingtestes50@gmail.com: ✓ Conta sincronizada",
-      "timestamp": "2026-04-01T06:30:41.316Z"
-    },
-    {
-      "id": "wu-1775025037362-bl39dcg11bp",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – farmingtestes50@gmail.com",
-      "message": "farmingtestes50@gmail.com: ⚠ Não está logado no YouTube — tentando acessar com conta Google...",
-      "timestamp": "2026-04-01T06:30:37.362Z"
-    },
-    {
-      "id": "wu-1775025037359-8req38p30t7",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – farmingtestes50@gmail.com",
-      "message": "farmingtestes50@gmail.com: Verificando status de login no YouTube...",
-      "timestamp": "2026-04-01T06:30:37.359Z"
-    },
-    {
-      "id": "wu-1775025037358-2cwmwzvbrfy",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – farmingtestes50@gmail.com",
-      "message": "farmingtestes50@gmail.com: Nenhum termo encontrado, continuando...",
-      "timestamp": "2026-04-01T06:30:37.358Z"
-    },
-    {
-      "id": "wu-1775025037348-2rb7roqs4pf",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – farmingtestes50@gmail.com",
-      "message": "farmingtestes50@gmail.com: Procurando por termos para aceitar...",
-      "timestamp": "2026-04-01T06:30:37.348Z"
-    },
-    {
-      "id": "wu-1775025034961-0np2o537gkka",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com:   ✓ Senha enviada",
-      "timestamp": "2026-04-01T06:30:34.961Z"
-    },
-    {
-      "id": "wu-1775025033633-2vrdo30wozc",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: Digitando senha",
-      "timestamp": "2026-04-01T06:30:33.634Z"
-    },
-    {
-      "id": "wu-1775025032334-81nntz1i4c",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – farmingtestes50@gmail.com",
-      "message": "farmingtestes50@gmail.com: ✓ Página carregou",
-      "timestamp": "2026-04-01T06:30:32.334Z"
-    },
-    {
-      "id": "wu-1775025029621-tkjaq5sf1p",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041:   ✓ Email enviado (Enter)",
-      "timestamp": "2026-04-01T06:30:29.621Z"
-    },
-    {
-      "id": "wu-1775025028617-rag5w5dkodl",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com:   ✓ Email enviado (Enter)",
-      "timestamp": "2026-04-01T06:30:28.617Z"
-    },
-    {
-      "id": "wu-1775025027118-9bvmw362cn",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – farmingtestes50@gmail.com",
-      "message": "farmingtestes50@gmail.com: [Tentativa 1/3] Acessando https://www.youtube.com",
-      "timestamp": "2026-04-01T06:30:27.118Z"
-    },
-    {
-      "id": "wu-1775025027116-lgxqwusfiwq",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – farmingtestes50@gmail.com",
-      "message": "farmingtestes50@gmail.com: Abrindo YouTube e pesquisando: \"como aprender inglês rápido\"",
-      "timestamp": "2026-04-01T06:30:27.116Z"
-    },
-    {
-      "id": "wu-1775025027113-kgku8jhxo8",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – farmingtestes50@gmail.com",
-      "message": "farmingtestes50@gmail.com: Já logado no Google! Pulando login.",
-      "timestamp": "2026-04-01T06:30:27.113Z"
-    },
-    {
-      "id": "wu-1775025027109-mqvjiad58",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – farmingtestes50@gmail.com",
-      "message": "farmingtestes50@gmail.com: ✓ Página carregou",
-      "timestamp": "2026-04-01T06:30:27.109Z"
-    },
-    {
-      "id": "wu-1775025026349-zbw8m1fl8k",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: Digitando email",
-      "timestamp": "2026-04-01T06:30:26.349Z"
-    },
-    {
-      "id": "wu-1775025026318-xrx6n21tthn",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: Aguardando tela de login carregar...",
-      "timestamp": "2026-04-01T06:30:26.318Z"
-    },
-    {
-      "id": "wu-1775025026315-6tdczp33d9a",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: ✓ Página carregou",
-      "timestamp": "2026-04-01T06:30:26.315Z"
-    },
-    {
-      "id": "wu-1775025026038-prtm3hy29pf",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041: Digitando email",
-      "timestamp": "2026-04-01T06:30:26.038Z"
-    },
-    {
-      "id": "wu-1775025025992-5mgbsh8b26c",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041: Aguardando tela de login carregar...",
-      "timestamp": "2026-04-01T06:30:25.992Z"
-    },
-    {
-      "id": "wu-1775025025990-sqwaaw3v26k",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041: ✓ Página carregou",
-      "timestamp": "2026-04-01T06:30:25.990Z"
-    },
-    {
-      "id": "wu-1775025023335-mmpijmox0r",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: [Tentativa 1/3] Acessando https://accounts.google.com/signin/v2/identifier",
-      "timestamp": "2026-04-01T06:30:23.335Z"
-    },
-    {
-      "id": "wu-1775025023334-qpy69fkptb",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: Navegando para accounts.google.com",
-      "timestamp": "2026-04-01T06:30:23.334Z"
-    },
-    {
-      "id": "wu-1775025023225-bf6ze0tm44",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041: [Tentativa 1/3] Acessando https://accounts.google.com/signin/v2/identifier",
-      "timestamp": "2026-04-01T06:30:23.225Z"
-    },
-    {
-      "id": "wu-1775025023224-63c9mk1n1vd",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041: Navegando para accounts.google.com",
-      "timestamp": "2026-04-01T06:30:23.224Z"
-    },
-    {
-      "id": "wu-1775025023196-udfbu4wnvnp",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – farmingtestes50@gmail.com",
-      "message": "farmingtestes50@gmail.com: [Tentativa 1/3] Acessando https://accounts.google.com/signin/v2/identifier",
-      "timestamp": "2026-04-01T06:30:23.196Z"
-    },
-    {
-      "id": "wu-1775025023194-xrbjdhr412r",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – farmingtestes50@gmail.com",
-      "message": "farmingtestes50@gmail.com: Navegando para accounts.google.com",
-      "timestamp": "2026-04-01T06:30:23.194Z"
-    },
-    {
-      "id": "wu-1775025019451-m6iuu68avd",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: Iniciando browser para so95113193@gmail.com",
-      "timestamp": "2026-04-01T06:30:19.451Z"
-    },
-    {
-      "id": "wu-1775025019449-wb283nglu",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: ✓ Tunnel criado: http://localhost:59584",
-      "timestamp": "2026-04-01T06:30:19.449Z"
-    },
-    {
-      "id": "wu-1775025019445-ere5ik832vg",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – farmingtestes50@gmail.com",
-      "message": "farmingtestes50@gmail.com: Iniciando browser para farmingtestes50@gmail.com",
-      "timestamp": "2026-04-01T06:30:19.445Z"
-    },
-    {
-      "id": "wu-1775025019444-lbj1ak2qvql",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – farmingtestes50@gmail.com",
-      "message": "farmingtestes50@gmail.com: ✓ Tunnel criado: http://localhost:59583",
-      "timestamp": "2026-04-01T06:30:19.444Z"
-    },
-    {
-      "id": "wu-1775025019436-6pntzzfyrfq",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041: Iniciando browser para choi74484041@gmail.comchoi74484041",
-      "timestamp": "2026-04-01T06:30:19.436Z"
-    },
-    {
-      "id": "wu-1775025019435-eky5p7y4ouw",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041: ⚠️ Nenhum proxy configurado - usando conexão direta",
-      "timestamp": "2026-04-01T06:30:19.435Z"
-    },
-    {
-      "id": "wu-1775025019434-k2st9w392xp",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041: [DEBUG] Parsed: type=undefined, host=undefined, hasAuth=undefined",
-      "timestamp": "2026-04-01T06:30:19.434Z"
-    },
-    {
-      "id": "wu-1775025019433-8xrspa59hfb",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041: [DEBUG] Proxy string: bestchoi744840414669@teml.net",
-      "timestamp": "2026-04-01T06:30:19.433Z"
-    },
-    {
-      "id": "wu-1775025019432-47vmyqy89ie",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – choi74484041@gmail.comchoi74484041",
-      "message": "choi74484041@gmail.comchoi74484041: Iniciando sessão de aquecimento (dia 1) — ~21 dia(s) restante(s)",
-      "timestamp": "2026-04-01T06:30:19.432Z"
-    },
-    {
-      "id": "wu-1775025019431-x0q0m18bif",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: Criando tunnel SOCKS5 com autenticação...",
-      "timestamp": "2026-04-01T06:30:19.431Z"
-    },
-    {
-      "id": "wu-1775025019430-7yjinifvuer",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: [DEBUG] Parsed: type=socks5, host=45.9.154.128, hasAuth=axt399221234",
-      "timestamp": "2026-04-01T06:30:19.430Z"
-    },
-    {
-      "id": "wu-1775025019429-t2z7ykx4d5q",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: [DEBUG] Proxy string: 45.9.154.128:22326:br7223882234:axt399221234",
-      "timestamp": "2026-04-01T06:30:19.429Z"
-    },
-    {
-      "id": "wu-1775025019427-zrotz1r0rm",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: Iniciando sessão de aquecimento (dia 1) — ~21 dia(s) restante(s)",
-      "timestamp": "2026-04-01T06:30:19.427Z"
-    },
-    {
-      "id": "wu-1775025019422-vktfith9hb",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – farmingtestes50@gmail.com",
-      "message": "farmingtestes50@gmail.com: Criando tunnel SOCKS5 com autenticação...",
-      "timestamp": "2026-04-01T06:30:19.422Z"
-    },
-    {
-      "id": "wu-1775025019420-imqsphadcqr",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – farmingtestes50@gmail.com",
-      "message": "farmingtestes50@gmail.com: [DEBUG] Parsed: type=socks5, host=181.215.24.56, hasAuth=axt06040025",
-      "timestamp": "2026-04-01T06:30:19.420Z"
-    },
-    {
-      "id": "wu-1775025019419-dpslua1fue9",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – farmingtestes50@gmail.com",
-      "message": "farmingtestes50@gmail.com: [DEBUG] Proxy string: socks5://181.215.24.56:15324:br985421146:axt06040025",
-      "timestamp": "2026-04-01T06:30:19.419Z"
-    },
-    {
-      "id": "wu-1775025019417-o1pz54jz4ck",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – farmingtestes50@gmail.com",
-      "message": "farmingtestes50@gmail.com: Iniciando sessão de aquecimento (dia 1) — ~21 dia(s) restante(s)",
-      "timestamp": "2026-04-01T06:30:19.417Z"
-    },
-    {
-      "id": "wu-1775025019413-ymbrhma9gbh",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – sistema",
-      "message": "Iniciando ciclo de aquecimento para 3 conta(s)",
-      "timestamp": "2026-04-01T06:30:19.414Z"
-    },
-    {
-      "id": "wu-1775024911040-90j022d0zse",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: ✓ Página carregou",
-      "timestamp": "2026-04-01T06:28:31.040Z"
-    },
-    {
-      "id": "wu-1775024907848-lcmsnrcw57g",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: [Tentativa 1/3] Acessando https://www.youtube.com",
-      "timestamp": "2026-04-01T06:28:27.848Z"
-    },
-    {
-      "id": "wu-1775024907847-q6k791ja0d",
-      "type": "info",
-      "profileId": null,
-      "profileName": "Warmup – so95113193@gmail.com",
-      "message": "so95113193@gmail.com: Abrindo YouTube e pesquisando: \"dicas para economizar dinheiro\"",
-      "timestamp": "2026-04-01T06:28:27.847Z"
     }
   ],
   "accounts": [
@@ -4074,7 +4074,10 @@
       "warmupEndDate": "2026-04-22T19:40:30.326Z",
       "warmupDaysDone": 0,
       "lastWarmupAt": null,
-      "adsCustomerId": null
+      "adsCustomerId": null,
+      "warmupStatus": "warming",
+      "warmupStartTime": "2026-04-01T21:13:41.165Z",
+      "warmupCurrentStep": "youtube"
     },
     {
       "id": "1775072403621-x6apzh0ipw",
@@ -4090,7 +4093,10 @@
       "warmupEndDate": "2026-04-22T19:40:30.329Z",
       "warmupDaysDone": 0,
       "lastWarmupAt": null,
-      "adsCustomerId": null
+      "adsCustomerId": null,
+      "warmupStatus": "warming",
+      "warmupStartTime": "2026-04-01T21:13:41.179Z",
+      "warmupCurrentStep": "youtube"
     },
     {
       "id": "1775072403622-8isf9oen3c",
@@ -4106,7 +4112,10 @@
       "warmupEndDate": "2026-04-22T19:40:30.333Z",
       "warmupDaysDone": 0,
       "lastWarmupAt": null,
-      "adsCustomerId": null
+      "adsCustomerId": null,
+      "warmupStatus": "warming",
+      "warmupStartTime": "2026-04-01T21:13:41.190Z",
+      "warmupCurrentStep": "youtube"
     },
     {
       "id": "1775072403623-jyfd7rl0qy",
@@ -4122,7 +4131,94 @@
       "warmupEndDate": "2026-04-22T19:40:30.336Z",
       "warmupDaysDone": 0,
       "lastWarmupAt": null,
-      "adsCustomerId": null
+      "adsCustomerId": null,
+      "warmupStatus": "warming",
+      "warmupStartTime": "2026-04-01T21:13:41.196Z",
+      "warmupCurrentStep": "youtube"
+    },
+    {
+      "id": "1775078181677-mqzfno5qocn",
+      "email": "po93897857@gmail.com",
+      "password": "93897857",
+      "proxy": "181.215.54.24:22326:br7223882234:axt399221234",
+      "recoveryEmail": "bestpo938978574325@teml.net",
+      "status": "pending",
+      "profileId": null,
+      "error": null,
+      "createdAt": "2026-04-01T21:16:21.677Z",
+      "warmupStartDate": null,
+      "warmupEndDate": null,
+      "warmupDaysDone": 0,
+      "lastWarmupAt": null,
+      "adsCustomerId": null,
+      "schedulePeriod": 10,
+      "warmupStatus": "idle",
+      "warmupStartTime": null,
+      "warmupProgress": 0,
+      "warmupCurrentStep": null
+    },
+    {
+      "id": "1775078181678-ng4auvd5tc",
+      "email": "ting96436399@gmail.com",
+      "password": "96436399",
+      "proxy": "181.215.54.245:22326:br7223882234:axt399221234",
+      "recoveryEmail": "bestting964363994733@teml.net",
+      "status": "pending",
+      "profileId": null,
+      "error": null,
+      "createdAt": "2026-04-01T21:16:21.677Z",
+      "warmupStartDate": null,
+      "warmupEndDate": null,
+      "warmupDaysDone": 0,
+      "lastWarmupAt": null,
+      "adsCustomerId": null,
+      "schedulePeriod": 9,
+      "warmupStatus": "idle",
+      "warmupStartTime": null,
+      "warmupProgress": 0,
+      "warmupCurrentStep": null
+    },
+    {
+      "id": "1775078181679-q19frrs0lfm",
+      "email": "tsang92202485@gmail.com",
+      "password": "92202485",
+      "proxy": "181.215.54.137:22326:br7223882234:axt399221234",
+      "recoveryEmail": "besttsang922024854913@teml.net",
+      "status": "pending",
+      "profileId": null,
+      "error": null,
+      "createdAt": "2026-04-01T21:16:21.677Z",
+      "warmupStartDate": null,
+      "warmupEndDate": null,
+      "warmupDaysDone": 0,
+      "lastWarmupAt": null,
+      "adsCustomerId": null,
+      "schedulePeriod": null,
+      "warmupStatus": "idle",
+      "warmupStartTime": null,
+      "warmupProgress": 0,
+      "warmupCurrentStep": null
+    },
+    {
+      "id": "1775078181680-xjewas21cbb",
+      "email": "cho91637716@gmail.com",
+      "password": "cho91637716",
+      "proxy": "181.215.54.193:22326:br7223882234:axt399221234",
+      "recoveryEmail": "bestcho916377164475@teml.net",
+      "status": "pending",
+      "profileId": null,
+      "error": null,
+      "createdAt": "2026-04-01T21:16:21.677Z",
+      "warmupStartDate": null,
+      "warmupEndDate": null,
+      "warmupDaysDone": 0,
+      "lastWarmupAt": null,
+      "adsCustomerId": null,
+      "schedulePeriod": null,
+      "warmupStatus": "idle",
+      "warmupStartTime": null,
+      "warmupProgress": 0,
+      "warmupCurrentStep": null
     }
   ]
 }

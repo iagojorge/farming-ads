@@ -1,11 +1,7 @@
 import { Router } from 'express';
-import { listProfiles, checkProxy, listGroups } from '../adspower.js';
 import {
   getSettings,
   updateSettings,
-  getProfiles,
-  upsertProfiles,
-  updateProfile,
   getSchedules,
   upsertSchedule,
   deleteSchedule,
@@ -18,7 +14,7 @@ import {
   deleteAccount,
   getAccountsByStatus,
 } from '../store.js';
-import { runProfiles, stopWorker, getWorkerStatus } from '../worker.js';
+import { stopWorker, getWorkerStatus } from '../worker.js';
 import { runLoginAccounts, stopLoginWorker, getLoginWorkerStatus } from '../loginWorker.js';
 import { runWarmupCycle, getWarmupWorkerStatus, checkExpiredWarmups, startWarmup } from '../warmupWorker.js';
 import { setupSchedules, setupWarmupSchedule } from '../scheduler.js';
@@ -48,28 +44,6 @@ router.put('/settings', (req, res) => {
   setupSchedules();
   setupWarmupSchedule(); // recria cron com novo horário
   res.json(updated);
-});
-
-// ── Profiles ─────────────────────────────────────────────────
-router.get('/profiles', (_req, res) => res.json(getProfiles()));
-
-router.post('/profiles/sync', async (_req, res) => {
-  try {
-    const adspowerList = await listProfiles();
-    const profiles = upsertProfiles(adspowerList);
-    res.json(profiles);
-  } catch (err) {
-    res.status(502).json({ error: err.message });
-  }
-});
-
-router.put('/profiles/:id', (req, res) => {
-  try {
-    const profile = updateProfile(req.params.id, req.body);
-    res.json(profile);
-  } catch (err) {
-    res.status(404).json({ error: err.message });
-  }
 });
 
 // ── Schedules ────────────────────────────────────────────────
@@ -103,25 +77,92 @@ router.delete('/schedules/:id', (req, res) => {
 router.get('/worker/status', (_req, res) => res.json(getWorkerStatus()));
 
 router.post('/worker/run', (req, res) => {
-  const { profileIds } = req.body || {};
-  // Fire-and-forget — não bloqueia o request
-  runProfiles(profileIds || null).catch((err) => {
-    console.error('[api] Worker error:', err.message);
-    broadcast('log', {
-      id: Date.now().toString(),
-      type: 'error',
-      profileId: null,
-      profileName: null,
-      message: `Erro no worker: ${err.message}`,
-      timestamp: new Date().toISOString(),
-    });
-  });
-  res.json({ started: true });
+  // Sistema de warming baseado em períodos (refatorado)
+  // Periods são executados automaticamente via scheduler, não via este endpoint antigo
+  res.json({ started: true, note: 'Warming agora baseado em períodos automáticos' });
 });
 
 router.post('/worker/stop', (_req, res) => {
   stopWorker();
   res.json({ stopped: true });
+});
+
+// ── Schedule (Períodos de agendamento) ──────────────────────
+/**
+ * Retorna os 12 períodos de 2h com as contas alocadas em cada um
+ */
+router.get('/schedule/periods', (_req, res) => {
+  const accounts = getAccounts();
+  const periods = [];
+  
+  for (let i = 0; i < 12; i++) {
+    const startHour = i * 2;
+    const endHour = (i + 1) * 2;
+    const startTime = `${String(startHour).padStart(2, '0')}:00`;
+    const endTime = `${String(endHour % 24).padStart(2, '0')}:00`;
+    
+    const periodAccounts = accounts.filter(a => a.schedulePeriod === i);
+    
+    periods.push({
+      period: i,
+      startTime,
+      endTime,
+      accounts: periodAccounts.map(a => ({
+        id: a.id,
+        email: a.email,
+        warmupStatus: a.warmupStatus,
+        warmupProgress: a.warmupProgress,
+        warmupCurrentStep: a.warmupCurrentStep,
+      })),
+      count: periodAccounts.length,
+      maxCapacity: 10,
+      available: 10 - periodAccounts.length,
+    });
+  }
+  
+  res.json(periods);
+});
+
+/**
+ * Aloca uma conta em um período específico
+ * POST body: { accountId, period }
+ */
+router.post('/schedule/allocate', (req, res) => {
+  const { accountId, period } = req.body;
+  
+  if (!accountId || period === undefined || period === null) {
+    return res.status(400).json({ error: 'accountId e period são obrigatórios' });
+  }
+  
+  if (period < 0 || period > 11) {
+    return res.status(400).json({ error: 'period deve estar entre 0 e 11' });
+  }
+  
+  try {
+    const accounts = getAccounts();
+    const periodAccounts = accounts.filter(a => a.schedulePeriod === period);
+    
+    if (periodAccounts.length >= 10) {
+      return res.status(400).json({ error: `Período ${period} já está cheio (máximo 10 contas)` });
+    }
+    
+    const updated = updateAccount(accountId, { schedulePeriod: period });
+    res.json(updated);
+  } catch (err) {
+    res.status(404).json({ error: err.message });
+  }
+});
+
+/**
+ * Remove alocação de uma conta (schedulePeriod = null)
+ */
+router.delete('/schedule/allocate/:id', (req, res) => {
+  try {
+    const updated = updateAccount(req.params.id, { schedulePeriod: null });
+    res.json(updated);
+  } catch (err) {
+    res.status(404).json({ error: err.message });
+  }
 });
 
 // ── Logs ─────────────────────────────────────────────────────
@@ -136,31 +177,6 @@ router.delete('/logs', (_req, res) => {
   res.json({ cleared: true });
 });
 
-// ── AdsPower passthrough ──────────────────────────────────────
-
-router.get('/adspower/rpa-flows', async (_req, res) => {
-  // Tenta buscar fluxos RPA, mas retorna array vazio se não suportado
-  try {
-    const client = require('axios').create({
-      baseURL: require('../store.js').getSettings().adspowerUrl,
-      timeout: 10000,
-    });
-    const result = await client.get('/api/v1/rpa/flow/list').catch(() => ({ data: { data: [] } }));
-    res.json(result.data?.data?.list || []);
-  } catch {
-    res.json([]); // Retorna array vazio se endpoint não suportado
-  }
-});
-
-router.get('/adspower/groups', async (_req, res) => {
-  try {
-    const groups = await listGroups();
-    res.json(groups);
-  } catch (err) {
-    res.status(502).json({ error: err.message });
-  }
-});
-
 // ── Accounts ──────────────────────────────────────────────────
 router.get('/accounts', (_req, res) => {
   res.json(getAccounts());
@@ -173,13 +189,6 @@ router.post('/accounts', (req, res) => {
   }
   const account = addAccount(email, password, proxy || '', recoveryEmail || '');
   res.status(201).json(account);
-});
-
-router.post('/accounts/check-proxy', async (req, res) => {
-  const { proxy } = req.body;
-  if (!proxy) return res.status(400).json({ error: 'Proxy é obrigatório' });
-  const result = await checkProxy(proxy);
-  res.json(result);
 });
 
 // Teste de proxy via Playwright

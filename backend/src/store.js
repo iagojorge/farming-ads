@@ -141,6 +141,13 @@ export function addAccount(email, password, proxy = '', recoveryEmail = '') {
     warmupDaysDone: 0,
     lastWarmupAt: null,
     adsCustomerId: null,
+    // Novo: Agendamento
+    schedulePeriod: null,  // 0-11 (período de 2h) ou null se não alocado
+    // Novo: Rastreamento de aquecimento
+    warmupStatus: 'idle',  // idle | warming | paused | completed
+    warmupStartTime: null, // timestamp quando começou (não confundir com warmupStartDate)
+    warmupProgress: 0,     // 0-100 %
+    warmupCurrentStep: null, // gmail | youtube | globo | gmail2 | done
   };
   store.accounts.push(account);
   persist();
@@ -164,6 +171,13 @@ export function addAccounts(list) {
     warmupDaysDone: 0,
     lastWarmupAt: null,
     adsCustomerId: null,
+    // Novo: Agendamento
+    schedulePeriod: null,  // 0-11 (período de 2h) ou null se não alocado
+    // Novo: Rastreamento de aquecimento
+    warmupStatus: 'idle',  // idle | warming | paused | completed
+    warmupStartTime: null, // timestamp quando começou
+    warmupProgress: 0,     // 0-100 %
+    warmupCurrentStep: null, // gmail | youtube | globo | gmail2 | done
   }));
   store.accounts.push(...accounts);
   persist();

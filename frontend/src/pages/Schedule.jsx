@@ -1,310 +1,282 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, ToggleLeft, ToggleRight, CalendarClock } from 'lucide-react';
+import { Plus, Trash2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '../api/index.js';
 
-const TIMEZONE_OPTIONS = [
-  'America/Sao_Paulo',
-  'America/Manaus',
-  'America/Belem',
-  'America/Fortaleza',
-  'America/Recife',
-  'America/Campo_Grande',
-  'America/Porto_Velho',
-  'America/Boa_Vista',
-  'America/Rio_Branco',
-  'UTC',
-];
+// Gera array com 12 períodos de 2h
+const PERIODS = Array.from({ length: 12 }, (_, i) => {
+  const startHour = i * 2;
+  const endHour = (i + 1) * 2;
+  const startTime = `${String(startHour).padStart(2, '0')}:00`;
+  const endTime = `${String(endHour % 24).padStart(2, '0')}:00`;
+  return {
+    period: i,
+    startTime,
+    endTime,
+    label: `${startTime} - ${endTime}`,
+  };
+});
 
-const CRON_PRESETS = [
-  { label: 'Todo dia às 09:00', cron: '0 9 * * *' },
-  { label: 'Todo dia às 13:00', cron: '0 13 * * *' },
-  { label: 'Todo dia às 18:00', cron: '0 18 * * *' },
-  { label: 'Seg–Sex às 09:00', cron: '0 9 * * 1-5' },
-  { label: 'Seg–Sex às 13:00', cron: '0 13 * * 1-5' },
-  { label: 'A cada hora', cron: '0 * * * *' },
-];
+function AllocateModal({ period, onClose, onAllocate, accounts, allocatedIds }) {
+  const available = accounts.filter((a) => !allocatedIds.includes(a.id));
 
-const BLANK = {
-  label: '',
-  cron: '0 9 * * *',
-  timezone: 'America/Sao_Paulo',
-  profileIds: ['all'],
-  enabled: true,
-};
-
-function ScheduleForm({ onSave, onCancel, initialData = BLANK, profiles }) {
-  const [form, setForm] = useState(initialData);
-  const [saving, setSaving] = useState(false);
-
-  const set = (key, val) => setForm((p) => ({ ...p, [key]: val }));
-
-  async function submit(e) {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      await onSave(form);
-    } finally {
-      setSaving(false);
-    }
+  if (available.length === 0) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="card max-w-sm w-full">
+          <h3 className="font-semibold text-gray-100 mb-3">Nenhuma conta disponível</h3>
+          <p className="text-sm text-gray-400 mb-4">
+            Todas as contas já estão alocadas em algum período.
+          </p>
+          <button
+            className="btn-secondary w-full"
+            onClick={onClose}
+          >
+            Fechar
+          </button>
+        </div>
+      </div>
+    );
   }
-
-  function toggleProfileId(id) {
-    if (id === 'all') {
-      set('profileIds', ['all']);
-      return;
-    }
-    const current = form.profileIds.filter((x) => x !== 'all');
-    if (current.includes(id)) {
-      const next = current.filter((x) => x !== id);
-      set('profileIds', next.length ? next : ['all']);
-    } else {
-      set('profileIds', [...current, id]);
-    }
-  }
-
-  const allSelected = form.profileIds.includes('all');
 
   return (
-    <form onSubmit={submit} className="card space-y-4">
-      <h3 className="font-semibold text-gray-100">
-        {initialData.id ? 'Editar agendamento' : 'Novo agendamento'}
-      </h3>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="card max-w-md w-full max-h-96 flex flex-col">
+        <h3 className="font-semibold text-gray-100 mb-4">
+          Adicionar conta ao período {period.label}
+        </h3>
 
-      <div>
-        <label className="label">Descrição</label>
-        <input
-          className="input"
-          placeholder="Ex: Farming diário manhã"
-          value={form.label}
-          onChange={(e) => set('label', e.target.value)}
-          required
-        />
-      </div>
-
-      <div>
-        <label className="label">Expressão Cron</label>
-        <input
-          className="input font-mono"
-          value={form.cron}
-          onChange={(e) => set('cron', e.target.value)}
-          required
-          pattern="^(\S+ ){4}\S+$"
-          title="Use formato cron: minuto hora dia-mês mês dia-semana"
-        />
-        <div className="flex flex-wrap gap-1.5 mt-2">
-          {CRON_PRESETS.map((p) => (
-            <button
-              key={p.cron}
-              type="button"
+        <div className="space-y-2 overflow-y-auto flex-1 pr-2 mb-4">
+          {available.map((account) => (
+            <div
+              key={account.id}
+              className="flex items-center justify-between gap-2 p-3 bg-gray-800/50 rounded-lg hover:bg-gray-800 transition-colors group cursor-pointer"
               onClick={() => {
-                set('cron', p.cron);
-                if (!form.label) set('label', p.label);
+                onAllocate(account.id, period.period);
+                onClose();
               }}
-              className="text-xs px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-gray-200 transition-colors border border-gray-700"
             >
-              {p.label}
-            </button>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-gray-200 truncate">{account.email}</p>
+                <p className="text-xs text-gray-500">
+                  Status: <span className="text-gray-400 capitalize">{account.status}</span>
+                </p>
+              </div>
+              <Plus className="w-4 h-4 text-gray-500 group-hover:text-brand-400 transition-colors" />
+            </div>
           ))}
         </div>
-      </div>
 
-      <div>
-        <label className="label">Fuso Horário</label>
-        <select
-          className="input"
-          value={form.timezone}
-          onChange={(e) => set('timezone', e.target.value)}
+        <button
+          className="btn-secondary w-full"
+          onClick={onClose}
         >
-          {TIMEZONE_OPTIONS.map((tz) => (
-            <option key={tz} value={tz}>{tz}</option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label className="label">Perfis</label>
-        <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-          <label className="flex items-center gap-2 cursor-pointer group">
-            <input
-              type="checkbox"
-              checked={allSelected}
-              onChange={() => toggleProfileId('all')}
-              className="accent-brand-500"
-            />
-            <span className="text-sm text-gray-300 group-hover:text-gray-100">Todos os perfis habilitados</span>
-          </label>
-          {profiles.map((p) => (
-            <label key={p.id} className="flex items-center gap-2 cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={!allSelected && form.profileIds.includes(p.id)}
-                onChange={() => toggleProfileId(p.id)}
-                disabled={allSelected}
-                className="accent-brand-500"
-              />
-              <span className={`text-sm ${allSelected ? 'text-gray-600' : 'text-gray-300 group-hover:text-gray-100'}`}>
-                {p.name}
-              </span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex gap-3 pt-1">
-        <button type="submit" className="btn-primary" disabled={saving}>
-          {saving ? 'Salvando…' : 'Salvar'}
-        </button>
-        <button type="button" className="btn-secondary" onClick={onCancel}>
           Cancelar
         </button>
       </div>
-    </form>
+    </div>
   );
 }
 
-export default function Schedule() {
-  const [schedules, setSchedules] = useState([]);
-  const [profiles, setProfiles] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState(null);
-
-  useEffect(() => {
-    api.getSchedules().then(setSchedules).catch(() => {});
-    api.getProfiles().then(setProfiles).catch(() => {});
-  }, []);
-
-  async function handleSave(form) {
-    try {
-      if (editing) {
-        const updated = await api.updateSchedule(editing.id, form);
-        setSchedules((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-        toast.success('Agendamento atualizado');
-      } else {
-        const created = await api.createSchedule(form);
-        setSchedules((prev) => [...prev, created]);
-        toast.success('Agendamento criado');
-      }
-      setShowForm(false);
-      setEditing(null);
-    } catch (e) {
-      toast.error(e.message);
-    }
-  }
-
-  async function removeSchedule(id) {
-    try {
-      await api.deleteSchedule(id);
-      setSchedules((prev) => prev.filter((s) => s.id !== id));
-      toast.success('Removido');
-    } catch (e) {
-      toast.error(e.message);
-    }
-  }
-
-  async function toggleSchedule(schedule) {
-    try {
-      const updated = await api.updateSchedule(schedule.id, { ...schedule, enabled: !schedule.enabled });
-      setSchedules((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-    } catch (e) {
-      toast.error(e.message);
-    }
-  }
-
-  function openNew() {
-    setEditing(null);
-    setShowForm(true);
-  }
-
-  function openEdit(schedule) {
-    setEditing(schedule);
-    setShowForm(true);
-  }
-
-  function cancelForm() {
-    setShowForm(false);
-    setEditing(null);
-  }
+function PeriodCard({ period, accounts, onAddClick, onRemoveClick }) {
+  const isFull = accounts.length >= 10;
+  const isEmpty = accounts.length === 0;
 
   return (
-    <div className="p-6 space-y-5 max-w-3xl mx-auto">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-100">Agenda</h1>
-        {!showForm && (
-          <button className="btn-primary" onClick={openNew}>
-            <Plus className="w-4 h-4" />
-            Novo agendamento
-          </button>
-        )}
+    <div className="card">
+      <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-800">
+        <h3 className="font-semibold text-gray-100">{period.label}</h3>
+        <div className="flex items-center gap-2">
+          <span
+            className={`text-xs px-2 py-1 rounded-full font-medium ${
+              isFull
+                ? 'bg-red-900/50 text-red-400'
+                : accounts.length > 5
+                  ? 'bg-yellow-900/50 text-yellow-400'
+                  : 'bg-gray-800 text-gray-400'
+            }`}
+          >
+            {accounts.length}/10 contas
+          </span>
+        </div>
       </div>
 
-      {showForm && (
-        <ScheduleForm
-          onSave={handleSave}
-          onCancel={cancelForm}
-          initialData={editing ?? undefined}
-          profiles={profiles}
-        />
-      )}
-
-      {schedules.length === 0 && !showForm ? (
-        <div className="card text-center py-12">
-          <CalendarClock className="w-10 h-10 text-gray-700 mx-auto mb-3" />
-          <p className="text-gray-500 mb-3">Nenhum agendamento configurado.</p>
-          <button className="btn-primary" onClick={openNew}>
-            <Plus className="w-4 h-4" />
-            Criar agendamento
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {schedules.map((s) => (
-            <div key={s.id} className="card flex items-center justify-between gap-4">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <p className="font-medium text-gray-100 truncate">{s.label || 'Sem nome'}</p>
-                  <span
-                    className={`text-xs px-1.5 py-0.5 rounded-full ${
-                      s.enabled ? 'bg-brand-900/50 text-brand-400' : 'bg-gray-800 text-gray-500'
-                    }`}
-                  >
-                    {s.enabled ? 'ativo' : 'inativo'}
-                  </span>
+      <div className="space-y-2 mb-4 min-h-32">
+        {isEmpty ? (
+          <div className="flex items-center justify-center h-32 bg-gray-800/30 rounded-lg border border-dashed border-gray-700">
+            <p className="text-sm text-gray-500">Nenhuma conta alocada</p>
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {accounts.map((account) => (
+              <div
+                key={account.id}
+                className="flex items-center justify-between gap-2 p-2 bg-gray-800/50 rounded-lg hover:bg-gray-800 transition-colors group"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-200 truncate">{account.email}</p>
+                  <div className="flex gap-2 text-xs text-gray-500">
+                    <span>{account.warmupStatus}</span>
+                    {account.warmupProgress > 0 && (
+                      <span>{account.warmupProgress}%</span>
+                    )}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-500">
-                  <span className="font-mono">{s.cron}</span>
-                  <span>{s.timezone}</span>
-                  <span>
-                    {s.profileIds?.includes('all')
-                      ? 'todos os perfis'
-                      : `${s.profileIds?.length} perfil(is)`}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5 flex-shrink-0">
                 <button
-                  onClick={() => toggleSchedule(s)}
-                  className="p-1.5 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-brand-400 transition-colors"
-                  title={s.enabled ? 'Desativar' : 'Ativar'}
-                >
-                  {s.enabled ? <ToggleRight className="w-5 h-5 text-brand-400" /> : <ToggleLeft className="w-5 h-5" />}
-                </button>
-                <button
-                  onClick={() => openEdit(s)}
-                  className="text-xs px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-gray-100 transition-colors"
-                >
-                  Editar
-                </button>
-                <button
-                  onClick={() => removeSchedule(s.id)}
-                  className="p-1.5 rounded-lg hover:bg-red-900/30 text-gray-600 hover:text-red-400 transition-colors"
+                  onClick={() => onRemoveClick(account.id)}
+                  className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-900/30 text-gray-500 hover:text-red-400 transition-all"
+                  title="Desalocar"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+        )}
+      </div>
+
+      <button
+        className={`w-full py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
+          isFull
+            ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
+            : 'bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-gray-100'
+        }`}
+        onClick={onAddClick}
+        disabled={isFull}
+      >
+        <Plus className="w-4 h-4" />
+        {isFull ? 'Período cheio' : 'Adicionar conta'}
+      </button>
+    </div>
+  );
+}
+
+export default function Schedule() {
+  const [periods, setPeriods] = useState([]);
+  const [accounts, setAccounts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedPeriod, setSelectedPeriod] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  async function loadData() {
+    try {
+      setLoading(true);
+      const [periodsData, accountsData] = await Promise.all([
+        api.getSchedulePeriods(),
+        api.getAccounts(),
+      ]);
+      setPeriods(periodsData);
+      setAccounts(accountsData);
+    } catch (err) {
+      toast.error('Erro ao carregar dados: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleAllocate(accountId, periodNum) {
+    try {
+      await api.allocateAccountToPeriod(accountId, periodNum);
+      toast.success('Conta alocada com sucesso');
+      await loadData();
+      setShowModal(false);
+    } catch (err) {
+      toast.error('Erro ao alocar: ' + err.message);
+    }
+  }
+
+  async function handleDeallocate(accountId) {
+    try {
+      await api.deallocateAccount(accountId);
+      toast.success('Alocação removida');
+      await loadData();
+    } catch (err) {
+      toast.error('Erro ao desalocar: ' + err.message);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-screen">
+        <p className="text-gray-400">Carregando...</p>
+      </div>
+    );
+  }
+
+  const allocatedIds = new Set(accounts
+    .filter((a) => a.schedulePeriod !== null)
+    .map((a) => a.id));
+
+  return (
+    <div className="p-6 space-y-6 max-w-6xl mx-auto">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-100">Agendamento de Contas</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Distribua suas contas nos 12 períodos de 2 horas (máximo 10 contas por período).
+            O warming iniciará 10 minutos antes do horário e finalizará 10 minutos antes do fim.
+          </p>
         </div>
+      </div>
+
+      {accounts.length === 0 ? (
+        <div className="card text-center py-12">
+          <AlertCircle className="w-10 h-10 text-gray-700 mx-auto mb-3" />
+          <p className="text-gray-500 mb-2">Nenhuma conta adicionada.</p>
+          <p className="text-sm text-gray-600">Adicione contas na aba de Contas primeiro.</p>
+        </div>
+      ) : (
+        <>
+          <div className="bg-gray-800/30 border border-gray-700 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-100">Total de contas</p>
+                <p className="text-2xl font-bold text-brand-400 mt-1">{accounts.length}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-100">Alocadas</p>
+                <p className="text-2xl font-bold text-green-400 mt-1">{allocatedIds.size}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-100">Não alocadas</p>
+                <p className="text-2xl font-bold text-yellow-400 mt-1">{accounts.length - allocatedIds.size}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {PERIODS.map((period) => {
+              const periodAccounts = accounts.filter((a) => a.schedulePeriod === period.period);
+
+              return (
+                <PeriodCard
+                  key={period.period}
+                  period={period}
+                  accounts={periodAccounts}
+                  onAddClick={() => {
+                    setSelectedPeriod(period);
+                    setShowModal(true);
+                  }}
+                  onRemoveClick={handleDeallocate}
+                />
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {showModal && selectedPeriod && (
+        <AllocateModal
+          period={selectedPeriod}
+          onClose={() => setShowModal(false)}
+          onAllocate={handleAllocate}
+          accounts={accounts}
+          allocatedIds={Array.from(allocatedIds)}
+        />
       )}
     </div>
   );

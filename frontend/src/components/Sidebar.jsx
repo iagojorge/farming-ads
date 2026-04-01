@@ -1,9 +1,7 @@
 import {
   LayoutDashboard,
-  Users,
   Mail,
   CalendarClock,
-  Settings,
   ScrollText,
   Leaf,
   Wifi,
@@ -12,11 +10,9 @@ import {
 
 const NAV = [
   { id: 'dashboard', label: 'Dashboard', Icon: LayoutDashboard },
-  { id: 'profiles', label: 'Perfis', Icon: Users },
   { id: 'accounts', label: 'Contas', Icon: Mail },
-  { id: 'schedule', label: 'Agenda', Icon: CalendarClock },
+  { id: 'schedule', label: 'Agendamento', Icon: CalendarClock },
   { id: 'logs', label: 'Logs', Icon: ScrollText },
-  { id: 'settings', label: 'Configurações', Icon: Settings },
 ];
 
 export default function Sidebar({ page, onNavigate, workerStatus }) {

@@ -1,174 +1,220 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Square, RefreshCw, Clock, User } from 'lucide-react';
+import { RefreshCw, Clock, Zap, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '../api/index.js';
 import LogEntry from '../components/LogEntry.jsx';
 
-function RunningCard({ profile }) {
+// Componente para exibir conta aquecendo
+function WarmingAccountCard({ account }) {
   const [remaining, setRemaining] = useState('');
 
   useEffect(() => {
+    if (!account.warmupStartTime) return;
+
     function tick() {
-      if (!profile.endsAt) {
-        setRemaining('—');
-        return;
-      }
-      const diff = Math.max(0, new Date(profile.endsAt).getTime() - Date.now());
-      const total = Math.floor(diff / 1000);
-      const m = Math.floor(total / 60);
-      const s = total % 60;
-      setRemaining(`${m}m ${s.toString().padStart(2, '0')}s`);
+      const started = new Date(account.warmupStartTime).getTime();
+      const elapsed = Date.now() - started;
+      const days = Math.floor(elapsed / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((elapsed % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const mins = Math.floor((elapsed % (1000 * 60 * 60)) / (1000 * 60));
+      setRemaining(`${days}d ${hours}h ${mins}m`);
     }
     tick();
-    const id = setInterval(tick, 1000);
+    const id = setInterval(tick, 30000); // Atualiza a cada 30s
     return () => clearInterval(id);
-  }, [profile.endsAt]);
+  }, [account.warmupStartTime]);
 
-  const statusColor = {
-    iniciando: 'text-yellow-400',
-    'browser aberto': 'text-blue-400',
-    farming: 'text-brand-400',
-  }[profile.status] || 'text-gray-400';
+  const stepColor = {
+    gmail: 'text-blue-400',
+    youtube: 'text-red-400',
+    globo: 'text-yellow-400',
+    done: 'text-green-400',
+  }[account.warmupCurrentStep] || 'text-gray-400';
+
+  const stepLabel = {
+    gmail: 'Gmail',
+    youtube: 'YouTube',
+    globo: 'Globo',
+    done: 'Concluído',
+  }[account.warmupCurrentStep] || account.warmupCurrentStep;
 
   return (
-    <div className="card flex items-center justify-between gap-4">
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-brand-900/50 flex items-center justify-center">
-          <User className="w-4 h-4 text-brand-400" />
+    <div className="card bg-gray-800/50 border border-gray-700">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1">
+          <p className="font-medium text-sm text-gray-100 truncate">{account.email}</p>
+          <div className="flex items-center gap-2 mt-1">
+            <Zap className="w-3.5 h-3.5 text-yellow-400" />
+            <p className={`text-xs font-medium capitalize ${stepColor}`}>{stepLabel}</p>
+            <span className="text-xs text-gray-500">•</span>
+            <span className="text-xs text-gray-400">{account.warmupProgress || 0}% completo</span>
+          </div>
+          {remaining && (
+            <p className="text-xs text-gray-500 mt-1">
+              <Clock className="w-2.5 h-2.5 inline mr-1" />
+              {remaining}
+            </p>
+          )}
         </div>
-        <div>
-          <p className="font-medium text-sm text-gray-100">{profile.name}</p>
-          <p className={`text-xs capitalize ${statusColor}`}>{profile.status}</p>
+
+        {/* Progress bar */}
+        <div className="w-16 h-1 bg-gray-700 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-brand-400 transition-all duration-300"
+            style={{ width: `${account.warmupProgress || 0}%` }}
+          />
         </div>
       </div>
-      {profile.endsAt && profile.status === 'farming' && (
-        <div className="flex items-center gap-1.5 text-xs text-gray-400">
-          <Clock className="w-3.5 h-3.5" />
-          <span className="tabular-nums">{remaining}</span>
-        </div>
-      )}
     </div>
   );
 }
 
-export default function Dashboard({ workerStatus, liveLog }) {
+export default function Dashboard({ workerStatus, liveLog, accountUpdates }) {
   const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [accounts, setAccounts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const listRef = useRef(null);
 
-  const running = workerStatus?.isRunning ?? false;
-  const runningProfiles = workerStatus?.runningProfiles ?? [];
+  const warmingAccounts = accounts.filter((a) => a.warmupStatus === 'warming');
+  const readyAccounts = accounts.filter((a) => a.status === 'ready_for_ads');
+  const totalAccounts = accounts.length;
 
-  // Carrega logs iniciais
+  // Carrega contas e logs iniciais
   useEffect(() => {
-    api.getLogs(30).then(setLogs).catch(() => {});
+    async function load() {
+      try {
+        const [accts, logs] = await Promise.all([
+          api.getAccounts(),
+          api.getLogs(30),
+        ]);
+        setAccounts(accts);
+        setLogs(logs);
+      } catch (e) {
+        toast.error('Erro ao carregar dados');
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
   }, []);
 
-  // Adiciona log em tempo real no topo
+  // Atualiza conta quando há mudança em tempo real
+  useEffect(() => {
+    if (accountUpdates) {
+      setAccounts((prev) =>
+        prev.map((a) => (a.id === accountUpdates.id ? { ...a, ...accountUpdates } : a))
+      );
+    }
+  }, [accountUpdates]);
+
+  // Adiciona log em tempo real
   useEffect(() => {
     if (liveLog) {
       setLogs((prev) => [liveLog, ...prev].slice(0, 30));
     }
   }, [liveLog]);
 
-  async function handleStart() {
-    setLoading(true);
-    try {
-      await api.startWorker();
-      toast.success('Worker iniciado');
-    } catch (e) {
-      toast.error(e.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleStop() {
-    setLoading(true);
-    try {
-      await api.stopWorker();
-      toast.info('Worker parado');
-    } catch (e) {
-      toast.error(e.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto">
+    <div className="p-6 space-y-6 max-w-6xl mx-auto">
       <h1 className="text-xl font-bold text-gray-100">Dashboard</h1>
 
-      {/* Status + ações */}
-      <div className="card flex items-center justify-between gap-4">
-        <div>
-          <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Status do Worker</p>
-          <div className="flex items-center gap-2">
-            <span
-              className={`w-2.5 h-2.5 rounded-full ${running ? 'bg-brand-400 animate-pulse' : 'bg-gray-600'}`}
-            />
-            <span className={`text-lg font-semibold ${running ? 'text-brand-400' : 'text-gray-400'}`}>
-              {running ? 'Em execução' : 'Ocioso'}
-            </span>
-          </div>
-          {running && (
-            <p className="text-xs text-gray-500 mt-1">
-              {runningProfiles.length} perfil(is) ativo(s)
-            </p>
-          )}
+      {loading ? (
+        <div className="card text-center py-8">
+          <p className="text-gray-400">Carregando...</p>
         </div>
-
-        <div className="flex gap-2">
-          {running ? (
-            <button className="btn-danger" onClick={handleStop} disabled={loading}>
-              <Square className="w-4 h-4" />
-              Parar
-            </button>
-          ) : (
-            <button className="btn-primary" onClick={handleStart} disabled={loading}>
-              <Play className="w-4 h-4" />
-              Iniciar Agora
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Perfis em execução */}
-      {runningProfiles.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
-            Perfis Ativos
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {runningProfiles.map((p) => (
-              <RunningCard key={p.profileId} profile={p} />
-            ))}
+      ) : (
+        <>
+          {/* Estatísticas */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="card bg-gray-800/50">
+              <p className="text-xs text-gray-500 uppercase">Total</p>
+              <p className="text-2xl font-bold text-gray-100 mt-1">{totalAccounts}</p>
+            </div>
+            <div className="card bg-gray-800/50">
+              <p className="text-xs text-gray-500 uppercase">Aquecendo</p>
+              <p className="text-2xl font-bold text-yellow-400 mt-1">{warmingAccounts.length}</p>
+            </div>
+            <div className="card bg-gray-800/50">
+              <p className="text-xs text-gray-500 uppercase">Prontos</p>
+              <p className="text-2xl font-bold text-green-400 mt-1">{readyAccounts.length}</p>
+            </div>
+            <div className="card bg-gray-800/50">
+              <p className="text-xs text-gray-500 uppercase">Taxa</p>
+              <p className="text-2xl font-bold text-brand-400 mt-1">
+                {totalAccounts > 0 ? Math.round((readyAccounts.length / totalAccounts) * 100) : 0}%
+              </p>
+            </div>
           </div>
-        </section>
+
+          {/* Contas aquecendo agora */}
+          {warmingAccounts.length > 0 && (
+            <section>
+              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                🔥 Aquecendo Agora ({warmingAccounts.length})
+              </h2>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {warmingAccounts.map((a) => (
+                  <WarmingAccountCard key={a.id} account={a} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Próximas a terminar */}
+          {warmingAccounts.length > 0 && (
+            <section>
+              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                ⏰ Próximas a Terminar (próximos 5 minutos)
+              </h2>
+              <div className="space-y-2">
+                {warmingAccounts
+                  .filter((a) => {
+                    if (!a.warmupStartTime || a.warmupProgress < 95) return false;
+                    const elapsed = Date.now() - new Date(a.warmupStartTime).getTime();
+                    const days = elapsed / (1000 * 60 * 60 * 24);
+                    return days > 20.5; // Próximos a completar os 21 dias
+                  })
+                  .slice(0, 5)
+                  .map((a) => (
+                    <div key={a.id} className="card bg-green-900/20 border border-green-800/30 flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-green-400">{a.email}</p>
+                        <p className="text-xs text-gray-400">{a.warmupProgress}% completo</p>
+                      </div>
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                    </div>
+                  ))}
+                {warmingAccounts.filter((a) => a.warmupProgress > 95).length === 0 && (
+                  <p className="text-sm text-gray-600 py-4 text-center">Nenhuma conta terminando em breve</p>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Log recente */}
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                Atividade Recente
+              </h2>
+              <button
+                className="text-xs text-gray-500 hover:text-gray-300 flex items-center gap-1.5 transition-colors"
+                onClick={() => api.getLogs(30).then(setLogs)}
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Atualizar
+              </button>
+            </div>
+            <div className="card" ref={listRef}>
+              {logs.length === 0 ? (
+                <p className="text-sm text-gray-600 py-4 text-center">Nenhuma atividade ainda.</p>
+              ) : (
+                logs.map((l) => <LogEntry key={l.id} log={l} />)
+              )}
+            </div>
+          </section>
+        </>
       )}
-
-      {/* Log recente */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
-            Atividade Recente
-          </h2>
-          <button
-            className="text-xs text-gray-500 hover:text-gray-300 flex items-center gap-1.5 transition-colors"
-            onClick={() => api.getLogs(30).then(setLogs)}
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            Atualizar
-          </button>
-        </div>
-        <div className="card" ref={listRef}>
-          {logs.length === 0 ? (
-            <p className="text-sm text-gray-600 py-4 text-center">Nenhuma atividade ainda.</p>
-          ) : (
-            logs.map((l) => <LogEntry key={l.id} log={l} />)
-          )}
-        </div>
-      </section>
     </div>
   );
 }

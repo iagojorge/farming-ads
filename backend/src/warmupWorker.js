@@ -1,12 +1,20 @@
 import { runWarmupSession } from './warmupEngine.js';
 import { TIMINGS } from './warmupTimings.js';
-import { getSettings, getAccountsByStatus, updateAccount, addLog } from './store.js';
+import { getSettings, getAccountsByStatus, getAccounts, updateAccount, addLog } from './store.js';
 import { broadcast } from './events.js';
 
 let isRunning = false;
+let activePeriodWarmups = new Map(); // period → { accounts: [...], startTime }
 
 export function getWarmupWorkerStatus() {
-  return { isRunning };
+  return { 
+    isRunning,
+    activePeriods: Array.from(activePeriodWarmups.entries()).map(([period, data]) => ({
+      period,
+      accountsCount: data.accounts?.length,
+      startTime: data.startTime,
+    })),
+  };
 }
 
 function makeLog(type, email, message) {
@@ -55,6 +63,7 @@ export function startWarmup(accountId) {
     warmupStartDate: now.toISOString(),
     warmupEndDate: end.toISOString(),
     warmupDaysDone: 0,
+    warmupStatus: 'idle',
   });
 }
 
@@ -64,10 +73,15 @@ export function startWarmup(accountId) {
 async function runSingleWarmup(account) {
   const { id, email } = account;
 
+  // Atualiza status para warming
+  updateAccount(id, { warmupStatus: 'warming', warmupStartTime: new Date().toISOString() });
+  broadcast('account-update', { id, warmupStatus: 'warming' });
+
   // Verifica se o período já expirou
   if (account.warmupEndDate && new Date(account.warmupEndDate) <= new Date()) {
-    updateAccount(id, { status: 'ready_for_ads' });
+    updateAccount(id, { status: 'ready_for_ads', warmupStatus: 'completed' });
     makeLog('success', email, `🎉 ${email}: Aquecimento concluído! Pronta para Google Ads.`);
+    broadcast('account-update', { id, status: 'ready_for_ads', warmupStatus: 'completed' });
     return;
   }
 
@@ -78,27 +92,95 @@ async function runSingleWarmup(account) {
   makeLog('info', email, `${email}: Iniciando sessão de aquecimento (dia ${(account.warmupDaysDone || 0) + 1}) — ~${daysLeft} dia(s) restante(s)`);
 
   try {
-    const result = await runWarmupSession(account, (msg) => makeLog('info', email, `${email}: ${msg}`));
+    // Atualiza step para gmail
+    const updateStep = (step) => {
+      updateAccount(id, { warmupCurrentStep: step });
+      broadcast('account-update', { id, warmupCurrentStep: step });
+    };
+
+    const result = await runWarmupSession(account, (msg) => {
+      makeLog('info', email, `${email}: ${msg}`);
+      // Atualiza step baseado em mensagem
+      if (msg.includes('Gmail') || msg.includes('email')) updateStep('gmail');
+      if (msg.includes('YouTube')) updateStep('youtube');
+      if (msg.includes('Globo')) updateStep('globo');
+    });
 
     if (!result.success) {
       if (result.error?.includes('checkpoint')) {
-        updateAccount(id, { status: 'checkpoint', error: 'Google pediu verificação' });
+        updateAccount(id, { status: 'checkpoint', error: 'Google pediu verificação', warmupStatus: 'paused' });
         makeLog('warn', email, `⚠️ ${email}: Checkpoint detectado — verificação manual necessária.`);
+        broadcast('account-update', { id, status: 'checkpoint', warmupStatus: 'paused' });
         return;
       }
-      updateAccount(id, { error: result.error });
+      updateAccount(id, { error: result.error, warmupStatus: 'idle' });
       makeLog('error', email, `${email}: Falha: ${result.error}`);
+      broadcast('account-update', { id, error: result.error, warmupStatus: 'idle' });
       return;
     }
 
+    // Calcula progresso
+    const newDaysDone = (account.warmupDaysDone || 0) + 1;
+    const progress = Math.min(100, Math.round((newDaysDone / TIMINGS.warmupDays) * 100));
+
     updateAccount(id, {
       lastWarmupAt: new Date().toISOString(),
-      warmupDaysDone: (account.warmupDaysDone || 0) + 1,
+      warmupDaysDone: newDaysDone,
+      warmupProgress: progress,
+      warmupStatus: 'idle',
+      warmupCurrentStep: 'done',
     });
     makeLog('success', email, `${email}: Sessão concluída. ~${daysLeft} dia(s) restante(s).`);
+    broadcast('account-update', { id, warmupDaysDone: newDaysDone, warmupProgress: progress, warmupStatus: 'idle' });
   } catch (err) {
     makeLog('error', email, `${email}: Erro na sessão: ${err.message}`);
-    updateAccount(id, { error: err.message });
+    updateAccount(id, { error: err.message, warmupStatus: 'idle' });
+    broadcast('account-update', { id, error: err.message, warmupStatus: 'idle' });
+  }
+}
+
+/**
+ * Executa warming para contas alocadas em um período específico (novo sistema)
+ */
+export async function runWarmupForPeriod(period) {
+  const allAccounts = getAccounts();
+  const periodAccounts = allAccounts.filter((a) => a.schedulePeriod === period && a.status === 'warming');
+
+  if (periodAccounts.length === 0) {
+    makeLog('info', null, `Período ${period}: Nenhuma conta para aquecer.`);
+    return;
+  }
+
+  activePeriodWarmups.set(period, {
+    accounts: periodAccounts,
+    startTime: new Date().toISOString(),
+  });
+  broadcast('warming-status', { isRunning: true, period, count: periodAccounts.length });
+
+  try {
+    makeLog('info', null, `Período ${period}: Iniciando aquecimento para ${periodAccounts.length} conta(s)`);
+
+    // Filtra contas que não foram aquecidas hoje
+    const today = new Date().toISOString().slice(0, 10);
+    const toWarm = periodAccounts.filter((a) => !a.lastWarmupAt || a.lastWarmupAt.slice(0, 10) !== today);
+
+    if (toWarm.length === 0) {
+      makeLog('info', null, `Período ${period}: Todas as ${periodAccounts.length} conta(s) já foram aquecidas hoje.`);
+      return;
+    }
+
+    const concurrency = Math.max(1, getSettings().concurrentBrowsers || TIMINGS.concurrentBrowsers);
+
+    // Executa warming em paralelo com limite de concorrência
+    for (let i = 0; i < toWarm.length; i += concurrency) {
+      const batch = toWarm.slice(i, i + concurrency);
+      await Promise.all(batch.map((a) => runSingleWarmup(a)));
+    }
+
+    makeLog('info', null, `Período ${period}: Ciclo de aquecimento finalizado (${toWarm.length} conta(s))`);
+  } finally {
+    activePeriodWarmups.delete(period);
+    broadcast('warming-status', { isRunning: false, period });
   }
 }
 

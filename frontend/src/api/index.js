@@ -18,16 +18,16 @@ export const api = {
   getSettings: () => req('GET', '/settings'),
   updateSettings: (data) => req('PUT', '/settings', data),
 
-  // Profiles
-  getProfiles: () => req('GET', '/profiles'),
-  syncProfiles: () => req('POST', '/profiles/sync'),
-  updateProfile: (id, data) => req('PUT', `/profiles/${id}`, data),
-
   // Schedules
   getSchedules: () => req('GET', '/schedules'),
   createSchedule: (data) => req('POST', '/schedules', data),
   updateSchedule: (id, data) => req('PUT', `/schedules/${id}`, data),
   deleteSchedule: (id) => req('DELETE', `/schedules/${id}`),
+
+  // Schedule Periods (novo sistema de agendamento)
+  getSchedulePeriods: () => req('GET', '/schedule/periods'),
+  allocateAccountToPeriod: (accountId, period) => req('POST', '/schedule/allocate', { accountId, period }),
+  deallocateAccount: (accountId) => req('DELETE', `/schedule/allocate/${accountId}`),
 
   // Worker
   getStatus: () => req('GET', '/worker/status'),
@@ -38,14 +38,11 @@ export const api = {
   getLogs: (limit, offset) => req('GET', `/logs?limit=${limit ?? 100}&offset=${offset ?? 0}`),
   clearLogs: () => req('DELETE', '/logs'),
 
-  // AdsPower\n  getRpaFlows: () => req('GET', '/adspower/rpa-flows'),
-
   // Accounts
   getAccounts: () => req('GET', '/accounts'),
   addAccount: (email, password, proxy, recoveryEmail) => req('POST', '/accounts', { email, password, proxy, recoveryEmail }),
   addAccountsBatch: (accounts) => req('POST', '/accounts/batch', { accounts }),
   deleteAccount: (id) => req('DELETE', `/accounts/${id}`),
-  checkProxy: (proxy) => req('POST', '/accounts/check-proxy', { proxy }),
   // Login Worker
   getLoginStatus: () => req('GET', '/accounts/login-status'),
   startLogin: (accountIds) => req('POST', '/accounts/login', { accountIds }),
@@ -68,6 +65,8 @@ export function createEventSource(onEvent) {
   es.addEventListener('status', (e) => onEvent('status', JSON.parse(e.data)));
   es.addEventListener('log', (e) => onEvent('log', JSON.parse(e.data)));
   es.addEventListener('login-status', (e) => onEvent('login-status', JSON.parse(e.data)));
+  es.addEventListener('account-update', (e) => onEvent('account-update', JSON.parse(e.data)));
+  es.addEventListener('warming-status', (e) => onEvent('warming-status', JSON.parse(e.data)));
   es.onerror = () => {};
   return es;
 }
