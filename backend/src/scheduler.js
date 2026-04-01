@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import { getSchedules, getAccounts, updateAccount, addLog } from './store.js';
-import { runWarmupCycle, runWarmupForPeriod, checkExpiredWarmups } from './warmupWorker.js';
+import { runWarmupCycle, runWarmupForPeriod, checkExpiredWarmups, cleanupStuckWarmingAccounts } from './warmupWorker.js';
 import { TIMINGS } from './warmupTimings.js';
 import { broadcast } from './events.js';
 
@@ -44,6 +44,12 @@ export function initScheduler() {
   cron.schedule('0 * * * *', () => {
     const n = checkExpiredWarmups();
     if (n > 0) console.log(`[scheduler] ${n} conta(s) marcada(s) como aquecida(s).`);
+  }, { timezone: 'America/Sao_Paulo' });
+
+  // Limpa contas travadas em warming a cada 5 minutos (IMPORTANTE para evitar estado travado)
+  cron.schedule('*/5 * * * *', () => {
+    const n = cleanupStuckWarmingAccounts();
+    if (n > 0) console.log(`[scheduler] ${n} conta(s) com warming travado foram resetadas.`);
   }, { timezone: 'America/Sao_Paulo' });
 }
 

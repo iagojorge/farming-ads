@@ -221,15 +221,19 @@ export default function Accounts() {
           <button
             onClick={async () => {
               try {
-                await api.triggerWarmup();
-                toast.success('Ciclo de aquecimento iniciado!');
+                const accountIds = selected.size > 0 ? Array.from(selected) : [];
+                await api.triggerWarmup(accountIds);
+                const msg = accountIds.length > 0 
+                  ? `Aquecimento iniciado para ${accountIds.length} conta(s)!`
+                  : 'Ciclo de aquecimento iniciado!';
+                toast.success(msg);
                 loadAccounts();
               } catch (e) { toast.error(e.message); }
             }}
             className="btn-secondary text-xs"
           >
             <Flame className="w-3 h-3 text-orange-400" />
-            Aquecer Agora ({pending + warming})
+            Aquecer {selected.size > 0 ? `(${selected.size})` : `Agora (${pending + warming})`}
           </button>
         </div>
       )}

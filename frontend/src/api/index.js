@@ -50,7 +50,7 @@ export const api = {
 
   // Warmup
   getWarmupStatus: () => req('GET', '/warmup/status'),
-  triggerWarmup: () => req('POST', '/warmup/run'),
+  triggerWarmup: (accountIds) => req('POST', '/warmup/run', { accountIds: accountIds || [] }),
   checkExpiredWarmups: () => req('POST', '/warmup/check-expired'),
   startWarmupAccount: (id) => req('POST', `/accounts/${id}/warmup`),
 };

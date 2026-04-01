@@ -10,6 +10,13 @@ export function removeClient(res) {
 }
 
 /**
+ * Retorna o número de clientes conectados
+ */
+export function getConnectedClients() {
+  return clients.size;
+}
+
+/**
  * Envia um evento SSE para todos os clientes conectados.
  * @param {string} event - Nome do evento (ex: 'status', 'log')
  * @param {object} data  - Payload serializado como JSON

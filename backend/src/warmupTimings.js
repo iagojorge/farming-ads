@@ -11,7 +11,7 @@ export const TIMINGS = {
   // ── Aquecimento geral ──────────────────────────────────
   warmupDays: 21,                // dias totais de aquecimento (3 semanas)
   dailyWarmupTime: '09:00',      // horário de execução diária (HH:MM)
-  concurrentBrowsers: 5,         // browsers simultâneos
+  concurrentBrowsers: 10,        // browsers simultâneos
 
   // ── Delays humanos (ms) ────────────────────────────────
   typingDelay: 80,               // delay entre cada tecla digitada

@@ -1,7 +1,7 @@
 import { runWarmupSession } from './warmupEngine.js';
 import { TIMINGS } from './warmupTimings.js';
 import { getSettings, getAccountsByStatus, getAccounts, updateAccount, addLog } from './store.js';
-import { broadcast } from './events.js';
+import { broadcast, getConnectedClients } from './events.js';
 
 let isRunning = false;
 let activePeriodWarmups = new Map(); // period → { accounts: [...], startTime }
@@ -50,6 +50,44 @@ export function checkExpiredWarmups() {
 }
 
 /**
+ * IMPORTANTE: Limpa contas travadas em estado "warming" que não estão rodando.
+ * Isso evita que contas fiquem mostrando "aquecendo agora" indefinidamente.
+ * Chamado periodicamente pelo scheduler.
+ */
+export function cleanupStuckWarmingAccounts() {
+  if (isRunning) return; // Não limpar enquanto worker está rodando
+
+  const allAccounts = getAccounts();
+  let count = 0;
+
+  for (const account of allAccounts) {
+    if (account.warmupStatus === 'warming') {
+      // Se é warming mas worker não está rodando, resetar
+      updateAccount(account.id, { warmupStatus: 'idle' });
+      makeLog('info', account.email, `Resetando conta ${account.email} de warming para idle (worker não estava ativo)`);
+      broadcast('account-update', { id: account.id, warmupStatus: 'idle' });
+      count++;
+    }
+
+    // Também verifica se a sessão está muito antiga (>2 horas)
+    if (account.warmupStartTime && account.warmupStatus === 'warming') {
+      const startTime = new Date(account.warmupStartTime);
+      const elapsed = Date.now() - startTime.getTime();
+      const maxDuration = 2 * 60 * 60 * 1000; // 2 horas
+
+      if (elapsed > maxDuration) {
+        updateAccount(account.id, { warmupStatus: 'idle' });
+        makeLog('warn', account.email, `⏱️ Sessão de ${account.email} travada por >2h, resetando para idle`);
+        broadcast('account-update', { id: account.id, warmupStatus: 'idle' });
+        count++;
+      }
+    }
+  }
+
+  return count;
+}
+
+/**
  * Inicia o aquecimento de uma conta pendente
  * (marca como warming e define datas).
  */
@@ -77,19 +115,26 @@ async function runSingleWarmup(account) {
   updateAccount(id, { warmupStatus: 'warming', warmupStartTime: new Date().toISOString() });
   broadcast('account-update', { id, warmupStatus: 'warming' });
 
+  // IMPORTANTE: Recarrega account do store para ter dados frescos
+  let freshAccount = getAccounts().find((a) => a.id === id);
+  if (!freshAccount) {
+    makeLog('error', email, `${email}: Conta não encontrada ao recarregar`);
+    return;
+  }
+
   // Verifica se o período já expirou
-  if (account.warmupEndDate && new Date(account.warmupEndDate) <= new Date()) {
+  if (freshAccount.warmupEndDate && new Date(freshAccount.warmupEndDate) <= new Date()) {
     updateAccount(id, { status: 'ready_for_ads', warmupStatus: 'completed' });
     makeLog('success', email, `🎉 ${email}: Aquecimento concluído! Pronta para Google Ads.`);
     broadcast('account-update', { id, status: 'ready_for_ads', warmupStatus: 'completed' });
     return;
   }
 
-  const daysLeft = account.warmupEndDate
-    ? Math.max(0, Math.ceil((new Date(account.warmupEndDate) - new Date()) / (1000 * 60 * 60 * 24)))
+  const daysLeft = freshAccount.warmupEndDate
+    ? Math.max(0, Math.ceil((new Date(freshAccount.warmupEndDate) - new Date()) / (1000 * 60 * 60 * 24)))
     : '?';
 
-  makeLog('info', email, `${email}: Iniciando sessão de aquecimento (dia ${(account.warmupDaysDone || 0) + 1}) — ~${daysLeft} dia(s) restante(s)`);
+  makeLog('info', email, `${email}: Iniciando sessão de aquecimento (dia ${(freshAccount.warmupDaysDone || 0) + 1}) — ~${daysLeft} dia(s) restante(s)`);
 
   try {
     // Atualiza step para gmail
@@ -98,7 +143,7 @@ async function runSingleWarmup(account) {
       broadcast('account-update', { id, warmupCurrentStep: step });
     };
 
-    const result = await runWarmupSession(account, (msg) => {
+    const result = await runWarmupSession(freshAccount, (msg) => {
       makeLog('info', email, `${email}: ${msg}`);
       // Atualiza step baseado em mensagem
       if (msg.includes('Gmail') || msg.includes('email')) updateStep('gmail');
@@ -113,14 +158,18 @@ async function runSingleWarmup(account) {
         broadcast('account-update', { id, status: 'checkpoint', warmupStatus: 'paused' });
         return;
       }
-      updateAccount(id, { error: result.error, warmupStatus: 'idle' });
+      // IMPORTANTE: Se falhar, ainda marca como tentado (não reseta completamente)
+      updateAccount(id, { error: result.error, warmupStatus: 'idle', warmupCurrentStep: 'error' });
       makeLog('error', email, `${email}: Falha: ${result.error}`);
       broadcast('account-update', { id, error: result.error, warmupStatus: 'idle' });
       return;
     }
 
-    // Calcula progresso
-    const newDaysDone = (account.warmupDaysDone || 0) + 1;
+    // IMPORTANTE: Recarrega account novamente ANTES de atualizar progresso
+    freshAccount = getAccounts().find((a) => a.id === id) || freshAccount;
+
+    // Calcula progresso com base na conta atualizada
+    const newDaysDone = (freshAccount.warmupDaysDone || 0) + 1;
     const progress = Math.min(100, Math.round((newDaysDone / TIMINGS.warmupDays) * 100));
 
     updateAccount(id, {
@@ -130,12 +179,12 @@ async function runSingleWarmup(account) {
       warmupStatus: 'idle',
       warmupCurrentStep: 'done',
     });
-    makeLog('success', email, `${email}: Sessão concluída. ~${daysLeft} dia(s) restante(s).`);
-    broadcast('account-update', { id, warmupDaysDone: newDaysDone, warmupProgress: progress, warmupStatus: 'idle' });
+    makeLog('success', email, `${email}: Sessão concluída. Dia ${newDaysDone}/${TIMINGS.warmupDays}. ~${daysLeft} dia(s) restante(s).`);
+    broadcast('account-update', { id, warmupDaysDone: newDaysDone, warmupProgress: progress, warmupStatus: 'idle', warmupCurrentStep: 'done' });
   } catch (err) {
     makeLog('error', email, `${email}: Erro na sessão: ${err.message}`);
-    updateAccount(id, { error: err.message, warmupStatus: 'idle' });
-    broadcast('account-update', { id, error: err.message, warmupStatus: 'idle' });
+    updateAccount(id, { error: err.message, warmupStatus: 'idle', warmupCurrentStep: 'error' });
+    broadcast('account-update', { id, error: err.message, warmupStatus: 'idle', warmupCurrentStep: 'error' });
   }
 }
 
@@ -187,6 +236,53 @@ export async function runWarmupForPeriod(period) {
 /**
  * Executa o ciclo de aquecimento para todas as contas warming.
  */
+/**
+ * Aquece contas específicas por ID (seleção manual)
+ */
+export async function runWarmupForSelectedAccounts(accountIds) {
+  if (isRunning) {
+    makeLog('warn', null, 'Ciclo já em execução, ignorando.');
+    return;
+  }
+
+  if (!accountIds || accountIds.length === 0) {
+    makeLog('warn', null, 'Nenhuma conta selecionada para aquecimento.');
+    return;
+  }
+
+  isRunning = true;
+  broadcast('warmup-status', { isRunning: true });
+
+  try {
+    const allAccounts = getAccounts();
+    const accounts = allAccounts.filter((a) => accountIds.includes(a.id));
+
+    if (accounts.length === 0) {
+      makeLog('warn', null, 'Nenhuma conta encontrada para os IDs fornecidos.');
+      return;
+    }
+
+    makeLog('info', null, `Aquecimento manual iniciado para ${accounts.length} conta(s)`);
+
+    const concurrency = Math.max(1, getSettings().concurrentBrowsers || TIMINGS.concurrentBrowsers);
+
+    for (let i = 0; i < accounts.length; i += concurrency) {
+      // Verifica se ainda há clientes conectados
+      if (getConnectedClients() === 0) {
+        makeLog('warn', null, 'Conexão de navegador perdida — parando aquecimento.');
+        break;
+      }
+      const batch = accounts.slice(i, i + concurrency);
+      await Promise.all(batch.map((a) => runSingleWarmup(a)));
+    }
+
+    makeLog('info', null, 'Aquecimento manual finalizado.');
+  } finally {
+    isRunning = false;
+    broadcast('warmup-status', { isRunning: false });
+  }
+}
+
 export async function runWarmupCycle() {
   if (isRunning) {
     makeLog('warn', null, 'Ciclo já em execução, ignorando.');
@@ -231,6 +327,11 @@ export async function runWarmupCycle() {
     const concurrency = Math.max(1, getSettings().concurrentBrowsers || TIMINGS.concurrentBrowsers);
 
     for (let i = 0; i < toWarm.length; i += concurrency) {
+      // Verifica se ainda há clientes conectados
+      if (getConnectedClients() === 0) {
+        makeLog('warn', null, 'Conexão de navegador perdida — parando aquecimento.');
+        break;
+      }
       const batch = toWarm.slice(i, i + concurrency);
       await Promise.all(batch.map((a) => runSingleWarmup(a)));
     }

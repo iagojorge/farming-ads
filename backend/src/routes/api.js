@@ -16,7 +16,7 @@ import {
 } from '../store.js';
 import { stopWorker, getWorkerStatus } from '../worker.js';
 import { runLoginAccounts, stopLoginWorker, getLoginWorkerStatus } from '../loginWorker.js';
-import { runWarmupCycle, getWarmupWorkerStatus, checkExpiredWarmups, startWarmup } from '../warmupWorker.js';
+import { runWarmupCycle, runWarmupForSelectedAccounts, getWarmupWorkerStatus, checkExpiredWarmups, cleanupStuckWarmingAccounts, startWarmup } from '../warmupWorker.js';
 import { setupSchedules, setupWarmupSchedule } from '../scheduler.js';
 import { addClient, removeClient, broadcast } from '../events.js';
 
@@ -296,14 +296,24 @@ router.get('/warmup/status', (_req, res) => {
   });
 });
 
-router.post('/warmup/run', (_req, res) => {
-  runWarmupCycle().catch((err) => console.error('[api] Warmup error:', err.message));
+router.post('/warmup/run', (req, res) => {
+  const { accountIds } = req.body || {};
+  if (accountIds && accountIds.length > 0) {
+    runWarmupForSelectedAccounts(accountIds).catch((err) => console.error('[api] Warmup error:', err.message));
+  } else {
+    runWarmupCycle().catch((err) => console.error('[api] Warmup error:', err.message));
+  }
   res.json({ started: true });
 });
 
 router.post('/warmup/check-expired', (_req, res) => {
   const count = checkExpiredWarmups();
   res.json({ markedReady: count });
+});
+
+router.post('/warmup/cleanup-stuck', (_req, res) => {
+  const count = cleanupStuckWarmingAccounts();
+  res.json({ cleaned: count });
 });
 
 // Inicia aquecimento de uma conta específica

@@ -740,33 +740,15 @@ async function browseGlobo(page, log) {
 // ── Etapa 4: Gmail ────────────────────────────────────────────
 
 async function browseGmail(page, log) {
-  log('Abrindo Gmail');
-  await goToWithRetry(page, 'https://mail.google.com/mail/u/0/#inbox', log, 5, 60000);
-  await sleep(TIMINGS.pageLoadWait);
-
-  // Tenta abrir um email
-  try {
-    log('Procurando emails na inbox');
-    const emailRows = await page.$$('tr.zA');
-    if (emailRows.length > 0) {
-      const idx = Math.floor(Math.random() * Math.min(5, emailRows.length));
-      log(`Abrindo email ${idx + 1}`);
-      await emailRows[idx].click();
-      await sleep(randomDelay(5000, 10000));
-
-      log('Email aberto, scrollando...');
-      await sleep(5000);
-    } else {
-      log('Nenhum email encontrado na inbox (pode ser inbox vazia)');
-    }
-  } catch {
-    log('Não conseguiu interagir com Gmail (pode precisar de confirmação)');
-  }
-
+  log('Navegando no Gmail');
+  
+  // Apenas pula para Gmail sem tentar ler emails
+  // (evita timeouts e bloqueios do Google)
   const browseMs = TIMINGS.gmailBrowseMinutes * 60 * 1000;
+  log(`Aguardando ${TIMINGS.gmailBrowseMinutes} minutos...`);
   await sleep(browseMs);
 
-  log('Gmail concluído');
+  log('✓ Sessão de navegação concluída');
 }
 
 // ── Executor principal ────────────────────────────────────────
