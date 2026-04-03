@@ -549,6 +549,89 @@ async function loginGoogle(page, email, password, log, recoveryEmail = '') {
   return true;
 }
 
+// ── Criar Canal YouTube (Dia 1) ───────────────────────────────
+
+async function createYouTubeChannel(page, log) {
+  log('📺 Criando canal no YouTube (dia 1)...');
+  try {
+    await goToWithRetry(page, 'https://www.youtube.com', log, 3);
+    await sleep(TIMINGS.pageLoadWait);
+
+    // Clica no ícone de perfil
+    await goToWithRetry(page, 'https://studio.youtube.com', log, 3);
+    await sleep(4000);
+
+    // Se redirecionou para criação de canal
+    const url = page.url();
+    if (url.includes('create_channel') || url.includes('studio.youtube.com')) {
+      log('✓ Canal já existe ou redirecionou para criação');
+
+      // Tenta preencher nome do canal se pediu
+      try {
+        const nameInput = await page.waitForSelector('input[aria-label*="name"], input[placeholder*="name"], input[name="displayName"]', { timeout: 5000 });
+        if (nameInput) {
+          await nameInput.click({ clickCount: 3 });
+          const channelName = 'Meu Canal ' + Math.floor(Math.random() * 9999);
+          await nameInput.type(channelName, { delay: TIMINGS.typingDelay });
+          log(`Nomeando canal: ${channelName}`);
+          await sleep(1000);
+
+          // Clica em criar/confirmar
+          const created = await page.evaluate(() => {
+            const btns = Array.from(document.querySelectorAll('button, yt-button-renderer'));
+            const btn = btns.find(b => /criar|create|confirmar|confirm/i.test(b.textContent || ''));
+            if (btn) { btn.click(); return true; }
+            return false;
+          });
+          if (created) {
+            log('✓ Canal criado!');
+            await sleep(3000);
+          }
+        }
+      } catch {
+        log('Canal já existia, continuando...');
+      }
+    }
+
+    log('✓ Etapa de criação de canal concluída');
+  } catch (err) {
+    log(`⚠ Criar canal: ${err.message} — continuando sem criar`);
+  }
+}
+
+// ── Se inscrever no canal do vídeo ───────────────────────────
+
+async function subscribeToChannel(page, log) {
+  log('👍 Tentando se inscrever no canal...');
+  try {
+    await sleep(2000);
+    const subscribed = await page.evaluate(() => {
+      // Tenta encontrar o botão de inscrever
+      const allBtns = Array.from(document.querySelectorAll(
+        'button, yt-button-renderer, ytd-subscribe-button-renderer button'
+      ));
+      const subBtn = allBtns.find(b => {
+        const text = (b.textContent || b.innerText || '').trim();
+        return /^inscrever-se$|^subscribe$|^inscrever$/i.test(text);
+      });
+      if (subBtn) {
+        subBtn.click();
+        return true;
+      }
+      return false;
+    });
+
+    if (subscribed) {
+      log('✓ Inscrito no canal!');
+      await sleep(2000);
+    } else {
+      log('Já inscrito ou botão não encontrado');
+    }
+  } catch (err) {
+    log(`⚠ Inscrição: ${err.message}`);
+  }
+}
+
 // ── Etapa 2: YouTube ──────────────────────────────────────────
 
 async function browseYouTube(page, log) {
@@ -670,6 +753,10 @@ async function browseYouTube(page, log) {
   // Assiste por X minutos
   const watchMs = TIMINGS.youtubeWatchMinutes * 60 * 1000;
   log(`Assistindo vídeo por ${TIMINGS.youtubeWatchMinutes} minutos`);
+
+  // Se inscreve no canal enquanto assiste
+  await subscribeToChannel(page, log);
+
   await sleep(watchMs);
 
   log('YouTube concluído');
@@ -760,7 +847,7 @@ async function browseGmail(page, log) {
  * @param {(msg: string) => void} log - callback de log
  * @returns {{ success: boolean, error?: string }}
  */
-export async function runWarmupSession(account, log = console.log) {
+export async function runWarmupSession(account, log = console.log, dayNumber = 1) {
   const profilePath = join(PROFILES_DIR, account.id);
 
   // Garante diretório do perfil
@@ -844,6 +931,11 @@ export async function runWarmupSession(account, log = console.log) {
 
     // 1. Login
     await loginGoogle(page, account.email, account.password, log, account.recoveryEmail);
+
+    // 1b. Criar canal no YouTube (apenas no dia 1)
+    if (dayNumber === 1) {
+      await createYouTubeChannel(page, log);
+    }
 
     // 2. YouTube
     await browseYouTube(page, log);

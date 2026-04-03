@@ -9,7 +9,7 @@ export const TIMINGS = {
   gmailBrowseMinutes: 3,         // tempo no Gmail
 
   // ── Aquecimento geral ──────────────────────────────────
-  warmupDays: 21,                // dias totais de aquecimento (3 semanas)
+  warmupDays: 3,                 // dias totais de aquecimento
   dailyWarmupTime: '09:00',      // horário de execução diária (HH:MM)
   concurrentBrowsers: 10,        // browsers simultâneos
 

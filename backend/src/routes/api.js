@@ -1,4 +1,7 @@
 import { Router } from 'express';
+import { existsSync, readFileSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import {
   getSettings,
   updateSettings,
@@ -19,11 +22,54 @@ import { runLoginAccounts, stopLoginWorker, getLoginWorkerStatus } from '../logi
 import { runWarmupCycle, runWarmupForSelectedAccounts, getWarmupWorkerStatus, checkExpiredWarmups, cleanupStuckWarmingAccounts, startWarmup } from '../warmupWorker.js';
 import { setupSchedules, setupWarmupSchedule } from '../scheduler.js';
 import { addClient, removeClient, broadcast } from '../events.js';
+import { validateCredentials, generateToken, authMiddleware, validateToken } from '../auth.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const PROFILES_DIR = join(__dirname, '../../../data/profiles');
 
 export const router = Router();
 
-// ── SSE ──────────────────────────────────────────────────────
+// ── AUTENTICAÇÃO ──────────────────────────────────────────────
+router.post('/auth/login', (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username e password são obrigatórios' });
+    }
+    
+    const validation = validateCredentials(username, password);
+    
+    if (!validation.valid) {
+      return res.status(401).json({ error: validation.error });
+    }
+    
+    const token = generateToken(username);
+    res.json({ token, username });
+  } catch (err) {
+    console.error('[ERROR] Login failed:', err);
+    res.status(500).json({ error: 'Erro interno do servidor: ' + err.message });
+  }
+});
+
+router.post('/auth/logout', (req, res) => {
+  // O logout é feito no frontend (remover token)
+  res.json({ message: 'Desconectado' });
+});
+
+// ── SSE (sem autenticação, valida token da query) ──────────────
 router.get('/events', (req, res) => {
+  // Valida token via query parameter
+  const token = req.query.token;
+  if (!token) {
+    return res.status(401).json({ error: 'Token não fornecido' });
+  }
+
+  const validation = validateToken(token);
+  if (!validation.valid) {
+    return res.status(401).json({ error: 'Token inválido ou expirado' });
+  }
+
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -35,6 +81,9 @@ router.get('/events', (req, res) => {
   addClient(res);
   req.on('close', () => removeClient(res));
 });
+
+// ── APLICAR AUTENTICAÇÃO EM TODAS AS ROTAS ABAIXO ──────────
+router.use(authMiddleware);
 
 // ── Settings ─────────────────────────────────────────────────
 router.get('/settings', (_req, res) => res.json(getSettings()));
@@ -262,6 +311,55 @@ router.put('/accounts/:id', (req, res) => {
 router.delete('/accounts/:id', (req, res) => {
   deleteAccount(req.params.id);
   res.json({ success: true });
+});
+
+// ── Exportar Cookies de Contas Prontas ────────────────────────
+router.post('/accounts/export-cookies', (req, res) => {
+  const { accountIds } = req.body || {};
+  
+  const accounts = getAccounts().filter(a => {
+    const isReady = a.status === 'ready_for_ads';
+    if (accountIds && accountIds.length > 0) {
+      return isReady && accountIds.includes(a.id);
+    }
+    return isReady;
+  });
+
+  if (accounts.length === 0) {
+    return res.status(404).json({ error: 'Nenhuma conta pronta encontrada' });
+  }
+
+  const result = [];
+
+  for (const account of accounts) {
+    const cookiesPath = join(PROFILES_DIR, account.id, 'Default', 'Cookies');
+    const networkCookiesPath = join(PROFILES_DIR, account.id, 'Default', 'Network', 'Cookies');
+    const stateCookiesPath = join(PROFILES_DIR, account.id, 'cookies.json');
+
+    let cookies = null;
+    let source = null;
+
+    // Tenta ler cookies.json (Playwright salva nesse formato)
+    if (existsSync(stateCookiesPath)) {
+      try {
+        cookies = JSON.parse(readFileSync(stateCookiesPath, 'utf-8'));
+        source = 'json';
+      } catch { /* ignora */ }
+    }
+
+    result.push({
+      id: account.id,
+      email: account.email,
+      proxy: account.proxy || null,
+      warmupDaysDone: account.warmupDaysDone || 0,
+      completedAt: account.lastWarmupAt || null,
+      cookiesAvailable: !!cookies,
+      cookiesSource: source,
+      cookies: cookies || [],
+    });
+  }
+
+  res.json({ accounts: result, total: result.length });
 });
 
 // ── Login Worker ──────────────────────────────────────────────

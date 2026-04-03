@@ -28,7 +28,7 @@ function WarmupProgress({ account }) {
   if (!warmupStartDate) return null;
   const totalDays = warmupEndDate
     ? Math.max(1, Math.ceil((new Date(warmupEndDate) - new Date(warmupStartDate)) / (1000 * 60 * 60 * 24)))
-    : 21;
+    : 3;
   const pct = Math.min(100, Math.round((warmupDaysDone / totalDays) * 100));
   return (
     <div className="mt-1 flex items-center gap-2">
@@ -271,7 +271,7 @@ export default function Accounts() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="text-gray-100 font-medium">{acc.email}</div>
-                      {acc.status === 'warming' && (
+                      {(acc.status === 'warming' || acc.warmupDaysDone > 0 || acc.status === 'ready_for_ads') && (
                         <WarmupProgress account={acc} />
                       )}
                       {acc.error && (

@@ -1,7 +1,7 @@
 import { runWarmupSession } from './warmupEngine.js';
 import { TIMINGS } from './warmupTimings.js';
 import { getSettings, getAccountsByStatus, getAccounts, updateAccount, addLog } from './store.js';
-import { broadcast, getConnectedClients } from './events.js';
+import { broadcast } from './events.js';
 
 let isRunning = false;
 let activePeriodWarmups = new Map(); // period → { accounts: [...], startTime }
@@ -111,7 +111,14 @@ export function startWarmup(accountId) {
 async function runSingleWarmup(account) {
   const { id, email } = account;
 
-  // Atualiza status para warming
+  // Garante que o status principal é 'warming' (pode ter entrado como pending)
+  const currentAccount = getAccounts().find((a) => a.id === id);
+  if (currentAccount && currentAccount.status !== 'warming') {
+    startWarmup(id);
+    broadcast('account-update', { id, status: 'warming', warmupStartDate: new Date().toISOString(), warmupDaysDone: 0 });
+  }
+
+  // Atualiza status de sessão para warming
   updateAccount(id, { warmupStatus: 'warming', warmupStartTime: new Date().toISOString() });
   broadcast('account-update', { id, warmupStatus: 'warming' });
 
@@ -149,7 +156,7 @@ async function runSingleWarmup(account) {
       if (msg.includes('Gmail') || msg.includes('email')) updateStep('gmail');
       if (msg.includes('YouTube')) updateStep('youtube');
       if (msg.includes('Globo')) updateStep('globo');
-    });
+    }, (freshAccount.warmupDaysDone || 0) + 1);
 
     if (!result.success) {
       if (result.error?.includes('checkpoint')) {
@@ -262,16 +269,26 @@ export async function runWarmupForSelectedAccounts(accountIds) {
       return;
     }
 
+    // Garante que contas pendentes sejam marcadas como warming antes de executar
+    for (const account of accounts) {
+      if (account.status === 'pending' || account.status === 'synced' || account.status === 'error') {
+        startWarmup(account.id);
+        makeLog('info', account.email, `${account.email}: Status atualizado para aquecimento (${TIMINGS.warmupDays} dias).`);
+        broadcast('account-update', {
+          id: account.id,
+          status: 'warming',
+          warmupStartDate: new Date().toISOString(),
+          warmupDaysDone: 0,
+          warmupStatus: 'idle',
+        });
+      }
+    }
+
     makeLog('info', null, `Aquecimento manual iniciado para ${accounts.length} conta(s)`);
 
     const concurrency = Math.max(1, getSettings().concurrentBrowsers || TIMINGS.concurrentBrowsers);
 
     for (let i = 0; i < accounts.length; i += concurrency) {
-      // Verifica se ainda há clientes conectados
-      if (getConnectedClients() === 0) {
-        makeLog('warn', null, 'Conexão de navegador perdida — parando aquecimento.');
-        break;
-      }
       const batch = accounts.slice(i, i + concurrency);
       await Promise.all(batch.map((a) => runSingleWarmup(a)));
     }
@@ -327,11 +344,6 @@ export async function runWarmupCycle() {
     const concurrency = Math.max(1, getSettings().concurrentBrowsers || TIMINGS.concurrentBrowsers);
 
     for (let i = 0; i < toWarm.length; i += concurrency) {
-      // Verifica se ainda há clientes conectados
-      if (getConnectedClients() === 0) {
-        makeLog('warn', null, 'Conexão de navegador perdida — parando aquecimento.');
-        break;
-      }
       const batch = toWarm.slice(i, i + concurrency);
       await Promise.all(batch.map((a) => runSingleWarmup(a)));
     }

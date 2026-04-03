@@ -6,16 +6,21 @@ import {
   Leaf,
   Wifi,
   WifiOff,
+  LogOut,
+  CheckCircle,
 } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth.js';
 
 const NAV = [
   { id: 'dashboard', label: 'Dashboard', Icon: LayoutDashboard },
   { id: 'accounts', label: 'Contas', Icon: Mail },
   { id: 'schedule', label: 'Agendamento', Icon: CalendarClock },
   { id: 'logs', label: 'Logs', Icon: ScrollText },
+  { id: 'ready', label: 'Contas Prontas', Icon: CheckCircle },
 ];
 
-export default function Sidebar({ page, onNavigate, workerStatus }) {
+export default function Sidebar({ page, onNavigate, workerStatus, onLogout }) {
+  const { username } = useAuth();
   const running = workerStatus?.isRunning;
   const count = workerStatus?.runningProfiles?.length ?? 0;
 
@@ -47,16 +52,31 @@ export default function Sidebar({ page, onNavigate, workerStatus }) {
         ))}
       </nav>
 
+      {/* User Info */}
+      <div className="px-4 py-3 border-t border-gray-800">
+        <div className="text-xs text-gray-500 mb-2">Conectado como</div>
+        <div className="text-sm font-medium text-gray-200">{username}</div>
+      </div>
+
       {/* Status */}
       <div className="px-4 py-4 border-t border-gray-800">
         <div
-          className={`flex items-center gap-2 text-xs font-medium ${
+          className={`flex items-center gap-2 text-xs font-medium mb-4 ${
             running ? 'text-brand-400' : 'text-gray-600'
           }`}
         >
           {running ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
           {running ? `Rodando — ${count} perfil(is)` : 'Worker ocioso'}
         </div>
+
+        {/* Logout Button */}
+        <button
+          onClick={onLogout}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-red-400 hover:bg-red-500/10 bg-gray-800/50 transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          Sair
+        </button>
       </div>
     </aside>
   );
