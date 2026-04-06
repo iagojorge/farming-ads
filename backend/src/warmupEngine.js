@@ -576,7 +576,7 @@ async function createYouTubeChannel(page, log) {
           log(`Nomeando canal: ${channelName}`);
           await sleep(1000);
 
-          // Clica em criar/confirmar
+          // Clica em criar/confirmar (abre modal)
           const created = await page.evaluate(() => {
             const btns = Array.from(document.querySelectorAll('button, yt-button-renderer'));
             const btn = btns.find(b => /criar|create|confirmar|confirm/i.test(b.textContent || ''));
@@ -584,7 +584,37 @@ async function createYouTubeChannel(page, log) {
             return false;
           });
           if (created) {
-            log('✓ Canal criado!');
+            log('Modal de criação aberta, confirmando...');
+            await sleep(randomDelay(2000, 3000));
+
+            // Clica no botão "Criar canal" dentro da modal
+            const confirmed = await page.evaluate(() => {
+              // Procura botões dentro de dialogs/modals
+              const selectors = [
+                'dialog button',
+                '[role="dialog"] button',
+                'ytcp-dialog button',
+                'tp-yt-paper-dialog button',
+                '#dialog button',
+                '.modal button',
+                'yt-confirm-dialog-renderer button'
+              ];
+              for (const sel of selectors) {
+                const btns = Array.from(document.querySelectorAll(sel));
+                const btn = btns.find(b => /criar canal|create channel|criar|create/i.test(b.textContent || ''));
+                if (btn) { btn.click(); return true; }
+              }
+              // Fallback: qualquer botão com texto "criar" que ainda não foi clicado
+              const allBtns = Array.from(document.querySelectorAll('button, yt-button-renderer'));
+              const btn = allBtns.find(b => /criar canal|create channel/i.test(b.textContent || ''));
+              if (btn) { btn.click(); return true; }
+              return false;
+            });
+            if (confirmed) {
+              log('✓ Canal criado (confirmado na modal)!');
+            } else {
+              log('⚠ Não encontrou botão de confirmação na modal');
+            }
             await sleep(3000);
           }
         }
@@ -838,6 +868,295 @@ async function browseGmail(page, log) {
   log('✓ Sessão de navegação concluída');
 }
 
+// ── Etapa 5: Criar Conta Google Ads + API Key ────────────────
+
+/**
+ * Acessa ads.google.com, cria conta, depois vai ao Cloud Console
+ * ativar a API do Google Ads e criar uma chave de API.
+ * Retorna a chave gerada (ou null se falhar).
+ */
+async function createGoogleAdsAccount(page, log) {
+  let apiKey = null;
+
+  // ── Parte 1: Criar conta Google Ads ──────────────────────
+  log('🔷 Criando conta Google Ads...');
+  try {
+    await page.goto('https://ads.google.com', { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await sleep(randomDelay(4000, 6000));
+
+    // Usa XPath que você passou: //*[@id="page-content"]/div/section[1]/div[2]/div[2]/div/a[1]
+    let clicked = false;
+    try {
+      const startBtn = await page.locator('//*[@id="page-content"]/div/section[1]/div[2]/div[2]/div/a[1]');
+      if (startBtn) {
+        log('✓ Acehn botão "Começar agora" pelo XPath — clicando...');
+        await startBtn.click();
+        clicked = true;
+        await sleep(randomDelay(5000, 8000));
+      }
+    } catch (e) {
+      log(`⚠️ XPath não funcionou: ${e.message}`);
+    }
+
+    // Fallback: tenta outros seletores
+    if (!clicked) {
+      try {
+        const startBtn = await page.getByRole('link').filter({ hasText: /Começar agora|Start now|Get started/i }).first();
+        log('✓ Achou "Começar agora" por role=link — clicando...');
+        await startBtn.click();
+        clicked = true;
+        await sleep(randomDelay(5000, 8000));
+      } catch (e) {
+        log(`⚠️ Role=link falhou: ${e.message}`);
+      }
+    }
+
+    if (!clicked) {
+      try {
+        const startBtn = await page.getByRole('button').filter({ hasText: /Começar agora|Start now|Get started/i }).first();
+        log('✓ Achou "Começar agora" por role=button — clicando...');
+        await startBtn.click();
+        clicked = true;
+        await sleep(randomDelay(5000, 8000));
+      } catch (e) {
+        log(`⚠️ Role=button falhou: ${e.message}`);
+      }
+    }
+
+    if (!clicked) {
+      log('❌ Não conseguiu clicar em "Começar agora" com nenhum seletor');
+      log('📋 Dica: Use o XPath que você passou ou capture novo do navegador');
+    }
+
+    // Aguarda página carregar
+    try {
+      await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
+    } catch { /* ok */ }
+    await sleep(randomDelay(3000, 5000));
+
+    // Salva estado pra debug
+    const url1 = page.url();
+    log(`📍 URL após "Começar agora": ${url1}`);
+
+    log('✅ Etapa 1 (Google Ads) concluída');
+  } catch (err) {
+    log(`⚠️ Erro ao criar conta Google Ads: ${err.message}`);
+  }
+
+  // ── Parte 2: Ativar API do Google Ads no Cloud Console ───
+  log('🔷 Ativando API do Google Ads no Cloud Console...');
+  try {
+    await page.goto('https://console.cloud.google.com/apis/api/googleads.googleapis.com/overview', {
+      waitUntil: 'domcontentloaded',
+      timeout: 30000,
+    });
+    await sleep(randomDelay(6000, 9000));
+
+    const url2 = page.url();
+    log(`📍 URL da API: ${url2}`);
+
+    // Procura botão "Ativar" com detalhamento
+    let enableFound = false;
+    
+    // Tenta várias combinações de seletores
+    const selectors = [
+      { type: 'role', value: 'button', filter: /Ativar|Enable|ATIVAR|ENABLE|HABILITAR/i },
+      { type: 'xpath', value: '//*[contains(text(), "Ativar")]' },
+      { type: 'xpath', value: '//*[contains(text(), "Enable")]' },
+      { type: 'role', value: 'button', filter: /ENABLE/ },
+    ];
+
+    for (const selector of selectors) {
+      try {
+        if (selector.type === 'role') {
+          const btn = await page.getByRole(selector.value).filter({ hasText: selector.filter }).first();
+          if (btn) {
+            log(`✓ Achou "Ativar" por ${selector.type}="${selector.value}" — clicando...`);
+            await btn.click();
+            enableFound = true;
+            break;
+          }
+        } else if (selector.type === 'xpath') {
+          const btn = await page.locator(selector.value).first();
+          if (btn) {
+            log(`✓ Achou "Ativar" por xpath — clicando...`);
+            await btn.click();
+            enableFound = true;
+            break;
+          }
+        }
+      } catch (e) {
+        log(`⚠️ Seletor [${selector.type}] não funcionou`);
+      }
+    }
+
+    if (enableFound) {
+      await sleep(randomDelay(5000, 8000));
+      log('✅ API do Google Ads ativada');
+    } else {
+      log('❌ Botão "Ativar" não encontrado — API pode já estar ativada OU seletor tá errado');
+      log('📋 Dica: Verifique no navegador qual é o seletor do botão "Ativar"');
+    }
+  } catch (err) {
+    log(`⚠️ Erro geral ao ativar API: ${err.message}`);
+  }
+
+  // ── Parte 3: Criar chave de API ──────────────────────────
+  log('🔷 Criando chave de API...');
+  try {
+    await page.goto('https://console.cloud.google.com/apis/credentials', {
+      waitUntil: 'domcontentloaded',
+      timeout: 30000,
+    });
+    await sleep(randomDelay(6000, 9000));
+
+    const url3 = page.url();
+    log(`📍 URL de credenciais: ${url3}`);
+
+    // Procura "Criar credenciais" com detalhamento
+    let credsClicked = false;
+    
+    const credsSelectors = [
+      { type: 'role', value: 'button', filter: /Criar credenciais|Create credentials|CREATE CREDENTIALS|CRIAR CREDENCIAIS/ },
+      { type: 'xpath', value: '//*[contains(text(), "Criar credenciais")]' },
+      { type: 'xpath', value: '//*[contains(text(), "Create credentials")]' },
+      { type: 'role', value: 'button', filter: /CREATE/ },
+      { type: 'xpath', value: '//button[contains(@aria-label, "Create")]' },
+    ];
+
+    for (const selector of credsSelectors) {
+      try {
+        if (selector.type === 'role') {
+          const btn = await page.getByRole(selector.value).filter({ hasText: selector.filter }).first();
+          if (btn) {
+            log(`✓ Achou "Criar credenciais" por ${selector.type}="${selector.value}" — clicando...`);
+            await btn.click();
+            credsClicked = true;
+            break;
+          }
+        } else if (selector.type === 'xpath') {
+          const btn = await page.locator(selector.value).first();
+          if (btn) {
+            log(`✓ Achou "Criar credenciais" por xpath — clicando...`);
+            await btn.click();
+            credsClicked = true;
+            break;
+          }
+        }
+      } catch (e) {
+        log(`⚠️ Seletor [${selector.type}] para credenciais não funcionou`);
+      }
+    }
+
+    if (!credsClicked) {
+      log('❌ Botão "Criar credenciais" não encontrado');
+      log('📋 Dica: Verifique no navegador qual é o seletor/xpath do botão "Criar credenciais"');
+      throw new Error('Botão "Criar credenciais" não encontrado');
+    }
+
+    await sleep(randomDelay(3000, 5000));
+
+    // Procura "Chave de API"
+    log('🔍 Procurando "Chave de API"...');
+    let apiKeyClicked = false;
+
+    const apiKeySelectors = [
+      { type: 'role', value: 'link', filter: /Chave de API|API key|API Key/ },
+      { type: 'role', value: 'button', filter: /Chave de API|API key|API Key/ },
+      { type: 'xpath', value: '//*[contains(text(), "Chave de API")]' },
+      { type: 'xpath', value: '//*[contains(text(), "API key")]' },
+    ];
+
+    for (const selector of apiKeySelectors) {
+      try {
+        if (selector.type === 'role') {
+          const elem = await page.getByRole(selector.value).filter({ hasText: selector.filter }).first();
+          if (elem) {
+            log(`✓ Achou "Chave de API" por ${selector.type}="${selector.value}" — clicando...`);
+            await elem.click();
+            apiKeyClicked = true;
+            break;
+          }
+        } else if (selector.type === 'xpath') {
+          const elem = await page.locator(selector.value).first();
+          if (elem) {
+            log(`✓ Achou "Chave de API" por xpath — clicando...`);
+            await elem.click();
+            apiKeyClicked = true;
+            break;
+          }
+        }
+      } catch (e) {
+        log(`⚠️ Seletor [${selector.type}] para "Chave de API" não funcionou`);
+      }
+    }
+
+    if (!apiKeyClicked) {
+      log('❌ "Chave de API" não encontrado — talvez seja um link numa dropdown');
+      log('📋 Dica: Verifique qual é o seletor/xpath da opção "Chave de API"');
+    } else {
+      await sleep(randomDelay(5000, 10000));
+
+      // Aguarda modal/dialog
+      log('⏳ Aguardando modal com a chave...');
+      try {
+        await page.waitForSelector('div[role="dialog"], textarea, input[readonly], pre, code', { timeout: 15000 });
+        log('✓ Modal/elemento com chave apareceu');
+      } catch {
+        log('⚠️ Modal não apareceu em 15s');
+      }
+
+      await sleep(randomDelay(2000, 3000));
+
+      // Tenta pegar a chave
+      log('🔍 Procurando chave na página...');
+      
+      // Procura textarea
+      let textarea = await page.$('textarea');
+      if (textarea) {
+        apiKey = await textarea.evaluate(el => el.value);
+        log(`✓ Achou chave em <textarea>: ${apiKey.slice(0, 20)}...`);
+      }
+
+      // Procura input readonly
+      if (!apiKey) {
+        let input = await page.$('input[readonly]');
+        if (input) {
+          apiKey = await input.inputValue();
+          log(`✓ Achou chave em <input readonly>: ${apiKey.slice(0, 20)}...`);
+        }
+      }
+
+      // Procura no HTML inteiro
+      if (!apiKey) {
+        const pageContent = await page.content();
+        const keyMatch = pageContent.match(/AIza[A-Za-z0-9_-]{35,39}/);
+        if (keyMatch) {
+          apiKey = keyMatch[0];
+          log(`✓ Achou chave no HTML: ${apiKey.slice(0, 20)}...`);
+        }
+      }
+
+      if (apiKey) {
+        log(`✅ Chave de API capturada: ${apiKey.slice(0, 10)}...`);
+      } else {
+        log('❌ Chave não foi encontrada em textarea, input ou HTML');
+        log('📋 Dica: Verifique como a chave aparece no modal (em qual elemento HTML)');
+      }
+    }
+  } catch (err) {
+    log(`⚠️ Erro ao criar chave de API: ${err.message}`);
+  }
+
+  if (apiKey) {
+    log(`✅ API Key final: ${apiKey.slice(0, 10)}...`);
+  } else {
+    log('❌ Não foi possível gerar API Key');
+  }
+
+  return apiKey;
+}
+
 // ── Executor principal ────────────────────────────────────────
 
 /**
@@ -907,7 +1226,7 @@ export async function runWarmupSession(account, log = console.log, dayNumber = 1
   }
 
   const launchOpts = {
-    headless: false,
+    headless: process.env.HEADLESS === 'true',
     args: [
       '--disable-blink-features=AutomationControlled',
       '--no-first-run',
@@ -946,8 +1265,25 @@ export async function runWarmupSession(account, log = console.log, dayNumber = 1
     // 4. Gmail
     await browseGmail(page, log);
 
+    // 5. Google Ads + API Key (último dia — cria a conta e gera chave)
+    let googleAdsApiKey = null;
+    if (dayNumber >= TIMINGS.warmupDays) {
+      googleAdsApiKey = await createGoogleAdsAccount(page, log);
+    }
+
+    // Salva cookies do perfil para exportação posterior
+    try {
+      const cookies = await context.cookies();
+      const cookiesPath = join(profilePath, 'cookies.json');
+      const { writeFileSync } = await import('fs');
+      writeFileSync(cookiesPath, JSON.stringify(cookies, null, 2));
+      log(`✓ Cookies salvos (${cookies.length} cookies)`);
+    } catch (e) {
+      log(`⚠️ Não foi possível salvar cookies: ${e.message}`);
+    }
+
     log(`Sessão de aquecimento concluída para ${account.email}`);
-    return { success: true };
+    return { success: true, googleAdsApiKey };
 
   } catch (err) {
     log(`ERRO no aquecimento de ${account.email}: ${err.message}`);
@@ -962,6 +1298,98 @@ export async function runWarmupSession(account, log = console.log, dayNumber = 1
         await proxyTunnel.close();
         log('✓ Tunnel SOCKS5 fechado');
       } catch { /* ignora */ }
+    }
+  }
+}
+
+// ── Executa APENAS o fluxo Google Ads + API Key ───────────────
+
+/**
+ * Abre browser com o perfil da conta, faz login e executa apenas
+ * o fluxo de criação de conta Google Ads + geração de API Key.
+ */
+export async function runGoogleAdsOnly(account, log = console.log) {
+  const profilePath = join(PROFILES_DIR, account.id);
+  if (!existsSync(profilePath)) mkdirSync(profilePath, { recursive: true });
+
+  const proxyConfig = parseProxy(account.proxy);
+  let proxyForBrowser = null;
+  let proxyTunnel = null;
+
+  if (proxyConfig) {
+    if (proxyConfig.type === 'socks5' && proxyConfig.hasAuth) {
+      try {
+        log(`Criando tunnel SOCKS5 com autenticação...`);
+        proxyTunnel = await createSocksProxyTunnel(
+          proxyConfig.host, proxyConfig.port,
+          proxyConfig.username, proxyConfig.password
+        );
+        proxyForBrowser = { server: proxyTunnel.url };
+      } catch (err) {
+        throw new Error(`Falha ao criar tunnel SOCKS5: ${err.message}`);
+      }
+    } else if (proxyConfig.type === 'socks5') {
+      proxyForBrowser = { server: `socks5://${proxyConfig.host}:${proxyConfig.port}` };
+    } else {
+      if (proxyConfig.username && proxyConfig.password) {
+        proxyForBrowser = {
+          server: `http://${proxyConfig.host}:${proxyConfig.port}`,
+          username: proxyConfig.username,
+          password: proxyConfig.password,
+        };
+      } else {
+        proxyForBrowser = { server: `http://${proxyConfig.host}:${proxyConfig.port}` };
+      }
+    }
+  }
+
+  const launchOpts = {
+    headless: process.env.HEADLESS === 'true',
+    args: [
+      '--disable-blink-features=AutomationControlled',
+      '--no-first-run',
+      '--disable-default-apps',
+    ],
+  };
+  if (proxyForBrowser) launchOpts.proxy = proxyForBrowser;
+
+  let context = null;
+  try {
+    log(`Iniciando browser para ${account.email} (Google Ads only)...`);
+    context = await chromium.launchPersistentContext(profilePath, launchOpts);
+    await sleep(TIMINGS.browserStartupWait);
+
+    const page = context.pages()[0] || await context.newPage();
+    page.setDefaultTimeout(20000);
+    page.setDefaultNavigationTimeout(30000);
+
+    // Login
+    await loginGoogle(page, account.email, account.password, log, account.recoveryEmail);
+
+    // Só o fluxo Google Ads + API Key
+    const apiKey = await createGoogleAdsAccount(page, log);
+
+    // Salva cookies atualizados
+    try {
+      const cookies = await context.cookies();
+      const cookiesPath = join(profilePath, 'cookies.json');
+      const { writeFileSync } = await import('fs');
+      writeFileSync(cookiesPath, JSON.stringify(cookies, null, 2));
+      log(`✓ Cookies salvos (${cookies.length} cookies)`);
+    } catch (e) {
+      log(`⚠️ Não foi possível salvar cookies: ${e.message}`);
+    }
+
+    return { success: true, googleAdsApiKey: apiKey };
+  } catch (err) {
+    log(`ERRO no fluxo Google Ads de ${account.email}: ${err.message}`);
+    return { success: false, error: err.message };
+  } finally {
+    if (context) {
+      try { await context.close(); } catch { /* ignora */ }
+    }
+    if (proxyTunnel) {
+      try { await proxyTunnel.close(); } catch { /* ignora */ }
     }
   }
 }

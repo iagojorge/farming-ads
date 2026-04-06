@@ -67,6 +67,7 @@ export const api = {
   triggerWarmup: (accountIds) => req('POST', '/warmup/run', { accountIds: accountIds || [] }),
   checkExpiredWarmups: () => req('POST', '/warmup/check-expired'),
   startWarmupAccount: (id) => req('POST', `/accounts/${id}/warmup`),
+  runGoogleAds: (accountIds) => req('POST', '/warmup/google-ads', { accountIds }),
 
   // Ready Accounts
   exportCookies: (accountIds) => req('POST', '/accounts/export-cookies', { accountIds: accountIds || [] }),

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle, Download, RefreshCw, Package } from 'lucide-react';
+import { CheckCircle, Download, RefreshCw, Package, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '../api/index.js';
 
@@ -8,6 +8,7 @@ export default function ReadyAccounts() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(new Set());
   const [exporting, setExporting] = useState(false);
+  const [runningAds, setRunningAds] = useState(false);
 
   const loadAccounts = async () => {
     setLoading(true);
@@ -68,24 +69,15 @@ export default function ReadyAccounts() {
 
       const data = await res.json();
 
-      // Gera arquivo JSON para download
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      // Gera arquivo TXT com email, senha e cookies
+      const txtContent = generateExportTxt(data.accounts);
+      const blob = new Blob([txtContent], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `contas_prontas_${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `contas_prontas_${new Date().toISOString().slice(0, 10)}.txt`;
       a.click();
       URL.revokeObjectURL(url);
-
-      // Também gera arquivo Netscape (formato de cookies para extensões)
-      const netscapeContent = generateNetscapeCookies(data.accounts);
-      const blobNs = new Blob([netscapeContent], { type: 'text/plain' });
-      const urlNs = URL.createObjectURL(blobNs);
-      const aNs = document.createElement('a');
-      aNs.href = urlNs;
-      aNs.download = `cookies_${new Date().toISOString().slice(0, 10)}.txt`;
-      aNs.click();
-      URL.revokeObjectURL(urlNs);
 
       toast.success(`✅ ${data.total} conta(s) exportada(s)!`);
     } catch (err) {
@@ -95,23 +87,34 @@ export default function ReadyAccounts() {
     }
   };
 
-  const generateNetscapeCookies = (accounts) => {
-    let content = '# Netscape HTTP Cookie File\n';
-    content += '# Exported by Farming Ads\n\n';
+  const generateExportTxt = (accounts) => {
+    let content = '==========================================================\n';
+    content += '  FARMING ADS — Contas Prontas para Google Ads\n';
+    content += `  Exportado em: ${new Date().toLocaleString('pt-BR')}\n`;
+    content += `  Total: ${accounts.length} conta(s)\n`;
+    content += '==========================================================\n\n';
 
     for (const account of accounts) {
-      content += `# === ${account.email} ===\n`;
-      if (!account.cookies || account.cookies.length === 0) {
-        content += '# (sem cookies disponíveis)\n\n';
-        continue;
+      content += '──────────────────────────────────────────────────────────\n';
+      content += `Email:    ${account.email}\n`;
+      content += `Senha:    ${account.password}\n`;
+      content += `Proxy:    ${account.proxy || 'Nenhum'}\n`;
+      content += `API Key:  ${account.googleAdsApiKey || 'Não gerada'}\n`;
+      content += `Dias:     ${account.warmupDaysDone}/3\n`;
+      content += `Concluído: ${account.completedAt ? new Date(account.completedAt).toLocaleString('pt-BR') : '—'}\n`;
+      content += `Cookies:  ${account.cookiesAvailable ? account.cookies.length + ' cookies' : 'Não disponível'}\n`;
+      content += '──────────────────────────────────────────────────────────\n';
+
+      if (account.cookies && account.cookies.length > 0) {
+        content += '\n# Netscape HTTP Cookie File\n';
+        for (const cookie of account.cookies) {
+          const httpOnly = cookie.httpOnly ? 'TRUE' : 'FALSE';
+          const secure = cookie.secure ? 'TRUE' : 'FALSE';
+          const expires = cookie.expires ? Math.floor(cookie.expires) : 0;
+          content += `${cookie.domain || '.google.com'}\t${httpOnly}\t${cookie.path || '/'}\t${secure}\t${expires}\t${cookie.name}\t${cookie.value}\n`;
+        }
       }
-      for (const cookie of account.cookies) {
-        const httpOnly = cookie.httpOnly ? 'TRUE' : 'FALSE';
-        const secure = cookie.secure ? 'TRUE' : 'FALSE';
-        const expires = cookie.expires ? Math.floor(cookie.expires) : 0;
-        content += `${cookie.domain || '.google.com'}\t${httpOnly}\t${cookie.path || '/'}\t${secure}\t${expires}\t${cookie.name}\t${cookie.value}\n`;
-      }
-      content += '\n';
+      content += '\n\n';
     }
 
     return content;
@@ -139,6 +142,32 @@ export default function ReadyAccounts() {
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
+
+          {(() => {
+            const noKeyIds = selected.size > 0
+              ? accounts.filter((a) => selected.has(a.id) && !a.googleAdsApiKey).map((a) => a.id)
+              : accounts.filter((a) => !a.googleAdsApiKey).map((a) => a.id);
+            return noKeyIds.length > 0 && (
+              <button
+                onClick={async () => {
+                  setRunningAds(true);
+                  try {
+                    await api.runGoogleAds(noKeyIds);
+                    toast.success(`Google Ads iniciado para ${noKeyIds.length} conta(s)!`);
+                  } catch (err) {
+                    toast.error('Erro: ' + err.message);
+                  } finally {
+                    setRunningAds(false);
+                  }
+                }}
+                disabled={runningAds}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                <Zap className="w-4 h-4" />
+                {runningAds ? 'Rodando...' : `Google Ads (${noKeyIds.length})`}
+              </button>
+            );
+          })()}
 
           <button
             onClick={handleExport}
@@ -179,8 +208,8 @@ export default function ReadyAccounts() {
             <div className="flex-1">Email</div>
             <div className="w-32">Proxy</div>
             <div className="w-24 text-center">Dias</div>
+            <div className="w-28 text-center">API Key</div>
             <div className="w-40 text-center">Concluído em</div>
-            <div className="w-28 text-center">Cookies</div>
           </div>
 
           {/* Linhas */}
@@ -222,17 +251,23 @@ export default function ReadyAccounts() {
                 </span>
               </div>
 
+              <div className="w-28 text-center">
+                {account.googleAdsApiKey ? (
+                  <span className="text-xs px-2 py-1 rounded-full bg-green-900/50 text-green-400" title={account.googleAdsApiKey}>
+                    ✓ Gerada
+                  </span>
+                ) : (
+                  <span className="text-xs px-2 py-1 rounded-full bg-gray-800 text-gray-500">
+                    —
+                  </span>
+                )}
+              </div>
+
               <div className="w-40 text-center">
                 <span className="text-xs text-gray-400">
                   {account.lastWarmupAt
                     ? new Date(account.lastWarmupAt).toLocaleDateString('pt-BR')
                     : '—'}
-                </span>
-              </div>
-
-              <div className="w-28 text-center">
-                <span className="text-xs px-2 py-1 rounded-full bg-gray-800 text-gray-400">
-                  No perfil
                 </span>
               </div>
             </div>
@@ -245,7 +280,7 @@ export default function ReadyAccounts() {
         <div className="bg-blue-950/30 border border-blue-800/40 rounded-lg p-4">
           <h3 className="text-sm font-medium text-blue-300 mb-2">ℹ️ Sobre a Exportação</h3>
           <ul className="text-xs text-blue-400/80 space-y-1 list-disc list-inside">
-            <li>Exporta 2 arquivos: <strong>JSON completo</strong> e <strong>cookies.txt (Netscape)</strong></li>
+            <li>Exporta 1 arquivo <strong>.txt</strong> com email, senha, proxy, API key e cookies</li>
             <li>Os cookies ficam salvos no perfil de cada conta em <code>data/profiles/</code></li>
             <li>Formato Netscape é compatível com extensões de importação de cookies</li>
             <li>Selecione contas específicas ou exporte todas de uma vez</li>

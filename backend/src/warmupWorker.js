@@ -1,4 +1,4 @@
-import { runWarmupSession } from './warmupEngine.js';
+import { runWarmupSession, runGoogleAdsOnly } from './warmupEngine.js';
 import { TIMINGS } from './warmupTimings.js';
 import { getSettings, getAccountsByStatus, getAccounts, updateAccount, addLog } from './store.js';
 import { broadcast } from './events.js';
@@ -179,15 +179,34 @@ async function runSingleWarmup(account) {
     const newDaysDone = (freshAccount.warmupDaysDone || 0) + 1;
     const progress = Math.min(100, Math.round((newDaysDone / TIMINGS.warmupDays) * 100));
 
-    updateAccount(id, {
-      lastWarmupAt: new Date().toISOString(),
-      warmupDaysDone: newDaysDone,
-      warmupProgress: progress,
-      warmupStatus: 'idle',
-      warmupCurrentStep: 'done',
-    });
-    makeLog('success', email, `${email}: Sessão concluída. Dia ${newDaysDone}/${TIMINGS.warmupDays}. ~${daysLeft} dia(s) restante(s).`);
-    broadcast('account-update', { id, warmupDaysDone: newDaysDone, warmupProgress: progress, warmupStatus: 'idle', warmupCurrentStep: 'done' });
+    // Se completou todos os dias, marca como pronta para ads
+    if (newDaysDone >= TIMINGS.warmupDays) {
+      const accountUpdate = {
+        lastWarmupAt: new Date().toISOString(),
+        warmupDaysDone: newDaysDone,
+        warmupProgress: 100,
+        warmupStatus: 'completed',
+        warmupCurrentStep: 'done',
+        status: 'ready_for_ads',
+      };
+      // Salva API key se foi gerada
+      if (result.googleAdsApiKey) {
+        accountUpdate.googleAdsApiKey = result.googleAdsApiKey;
+      }
+      updateAccount(id, accountUpdate);
+      makeLog('success', email, `🎉 ${email}: Aquecimento completo! ${newDaysDone}/${TIMINGS.warmupDays} dias — Pronta para Google Ads.${result.googleAdsApiKey ? ' API Key gerada.' : ''}`);
+      broadcast('account-update', { id, ...accountUpdate });
+    } else {
+      updateAccount(id, {
+        lastWarmupAt: new Date().toISOString(),
+        warmupDaysDone: newDaysDone,
+        warmupProgress: progress,
+        warmupStatus: 'idle',
+        warmupCurrentStep: 'done',
+      });
+      makeLog('success', email, `${email}: Sessão concluída. Dia ${newDaysDone}/${TIMINGS.warmupDays}. ~${daysLeft} dia(s) restante(s).`);
+      broadcast('account-update', { id, warmupDaysDone: newDaysDone, warmupProgress: progress, warmupStatus: 'idle', warmupCurrentStep: 'done' });
+    }
   } catch (err) {
     makeLog('error', email, `${email}: Erro na sessão: ${err.message}`);
     updateAccount(id, { error: err.message, warmupStatus: 'idle', warmupCurrentStep: 'error' });
@@ -237,6 +256,78 @@ export async function runWarmupForPeriod(period) {
   } finally {
     activePeriodWarmups.delete(period);
     broadcast('warming-status', { isRunning: false, period });
+  }
+}
+
+/**
+ * Executa APENAS o fluxo Google Ads + API Key para contas selecionadas.
+ */
+export async function runGoogleAdsForAccounts(accountIds) {
+  if (isRunning) {
+    makeLog('warn', null, 'Ciclo já em execução, ignorando pedido de Google Ads.');
+    return;
+  }
+
+  if (!accountIds || accountIds.length === 0) {
+    makeLog('warn', null, 'Nenhuma conta selecionada para Google Ads.');
+    return;
+  }
+
+  isRunning = true;
+  broadcast('warmup-status', { isRunning: true });
+
+  try {
+    const allAccounts = getAccounts();
+    const accounts = allAccounts.filter((a) => accountIds.includes(a.id));
+
+    if (accounts.length === 0) {
+      makeLog('warn', null, 'Nenhuma conta encontrada para os IDs fornecidos.');
+      return;
+    }
+
+    makeLog('info', null, `Google Ads: Iniciando fluxo para ${accounts.length} conta(s)`);
+
+    const concurrency = Math.max(1, getSettings().concurrentBrowsers || TIMINGS.concurrentBrowsers);
+
+    for (let i = 0; i < accounts.length; i += concurrency) {
+      const batch = accounts.slice(i, i + concurrency);
+      await Promise.all(batch.map(async (account) => {
+        const { id, email } = account;
+
+        updateAccount(id, { warmupStatus: 'warming', warmupCurrentStep: 'google-ads' });
+        broadcast('account-update', { id, warmupStatus: 'warming', warmupCurrentStep: 'google-ads' });
+
+        try {
+          const result = await runGoogleAdsOnly(account, (msg) => {
+            makeLog('info', email, `${email}: ${msg}`);
+          });
+
+          if (result.success && result.googleAdsApiKey) {
+            updateAccount(id, {
+              googleAdsApiKey: result.googleAdsApiKey,
+              warmupStatus: 'idle',
+              warmupCurrentStep: 'done',
+            });
+            makeLog('success', email, `✅ ${email}: API Key gerada: ${result.googleAdsApiKey.slice(0, 10)}...`);
+            broadcast('account-update', { id, googleAdsApiKey: result.googleAdsApiKey, warmupStatus: 'idle', warmupCurrentStep: 'done' });
+          } else {
+            const errMsg = result.error || 'API Key não foi gerada';
+            updateAccount(id, { warmupStatus: 'idle', warmupCurrentStep: 'error' });
+            makeLog('error', email, `${email}: Google Ads falhou — ${errMsg}`);
+            broadcast('account-update', { id, warmupStatus: 'idle', warmupCurrentStep: 'error' });
+          }
+        } catch (err) {
+          updateAccount(id, { warmupStatus: 'idle', warmupCurrentStep: 'error' });
+          makeLog('error', email, `${email}: Erro Google Ads: ${err.message}`);
+          broadcast('account-update', { id, warmupStatus: 'idle', warmupCurrentStep: 'error' });
+        }
+      }));
+    }
+
+    makeLog('info', null, 'Google Ads: Fluxo finalizado.');
+  } finally {
+    isRunning = false;
+    broadcast('warmup-status', { isRunning: false });
   }
 }
 

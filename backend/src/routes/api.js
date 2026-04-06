@@ -19,7 +19,7 @@ import {
 } from '../store.js';
 import { stopWorker, getWorkerStatus } from '../worker.js';
 import { runLoginAccounts, stopLoginWorker, getLoginWorkerStatus } from '../loginWorker.js';
-import { runWarmupCycle, runWarmupForSelectedAccounts, getWarmupWorkerStatus, checkExpiredWarmups, cleanupStuckWarmingAccounts, startWarmup } from '../warmupWorker.js';
+import { runWarmupCycle, runWarmupForSelectedAccounts, runGoogleAdsForAccounts, getWarmupWorkerStatus, checkExpiredWarmups, cleanupStuckWarmingAccounts, startWarmup } from '../warmupWorker.js';
 import { setupSchedules, setupWarmupSchedule } from '../scheduler.js';
 import { addClient, removeClient, broadcast } from '../events.js';
 import { validateCredentials, generateToken, authMiddleware, validateToken } from '../auth.js';
@@ -350,7 +350,9 @@ router.post('/accounts/export-cookies', (req, res) => {
     result.push({
       id: account.id,
       email: account.email,
+      password: account.password || '',
       proxy: account.proxy || null,
+      googleAdsApiKey: account.googleAdsApiKey || null,
       warmupDaysDone: account.warmupDaysDone || 0,
       completedAt: account.lastWarmupAt || null,
       cookiesAvailable: !!cookies,
@@ -407,6 +409,15 @@ router.post('/warmup/run', (req, res) => {
 router.post('/warmup/check-expired', (_req, res) => {
   const count = checkExpiredWarmups();
   res.json({ markedReady: count });
+});
+
+router.post('/warmup/google-ads', (req, res) => {
+  const { accountIds } = req.body || {};
+  if (!accountIds || accountIds.length === 0) {
+    return res.status(400).json({ error: 'Nenhuma conta selecionada' });
+  }
+  runGoogleAdsForAccounts(accountIds).catch((err) => console.error('[api] Google Ads error:', err.message));
+  res.json({ started: true });
 });
 
 router.post('/warmup/cleanup-stuck', (_req, res) => {
