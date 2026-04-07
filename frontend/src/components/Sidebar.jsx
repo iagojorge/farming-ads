@@ -8,6 +8,7 @@ import {
   WifiOff,
   LogOut,
   CheckCircle,
+  Shield,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth.js';
 
@@ -17,6 +18,7 @@ const NAV = [
   { id: 'schedule', label: 'Agendamento', Icon: CalendarClock },
   { id: 'logs', label: 'Logs', Icon: ScrollText },
   { id: 'ready', label: 'Contas Prontas', Icon: CheckCircle },
+  { id: 'security', label: 'Segurança', Icon: Shield },
 ];
 
 export default function Sidebar({ page, onNavigate, workerStatus, onLogout }) {

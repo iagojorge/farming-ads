@@ -9,6 +9,7 @@ import Schedule from './pages/Schedule.jsx';
 import Logs from './pages/Logs.jsx';
 import Login from './pages/Login.jsx';
 import ReadyAccounts from './pages/ReadyAccounts.jsx';
+import Security from './pages/Security.jsx';
 import { createEventSource } from './api/index.js';
 
 function ProtectedApp() {
@@ -33,7 +34,7 @@ function ProtectedApp() {
     return () => es.close();
   }, [getToken]);
 
-  const pages = { dashboard: Dashboard, accounts: Accounts, schedule: Schedule, logs: Logs, ready: ReadyAccounts };
+  const pages = { dashboard: Dashboard, accounts: Accounts, schedule: Schedule, logs: Logs, ready: ReadyAccounts, security: Security };
   const PageComponent = pages[page] || Dashboard;
 
   return (

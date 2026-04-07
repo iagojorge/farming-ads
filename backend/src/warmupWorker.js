@@ -193,6 +193,9 @@ async function runSingleWarmup(account) {
       if (result.googleAdsApiKey) {
         accountUpdate.googleAdsApiKey = result.googleAdsApiKey;
       }
+      if (result.googleAdsAccountId) {
+        accountUpdate.googleAdsAccountId = result.googleAdsAccountId;
+      }
       updateAccount(id, accountUpdate);
       makeLog('success', email, `🎉 ${email}: Aquecimento completo! ${newDaysDone}/${TIMINGS.warmupDays} dias — Pronta para Google Ads.${result.googleAdsApiKey ? ' API Key gerada.' : ''}`);
       broadcast('account-update', { id, ...accountUpdate });
@@ -305,11 +308,12 @@ export async function runGoogleAdsForAccounts(accountIds) {
           if (result.success && result.googleAdsApiKey) {
             updateAccount(id, {
               googleAdsApiKey: result.googleAdsApiKey,
+              googleAdsAccountId: result.googleAdsAccountId || undefined,
               warmupStatus: 'idle',
               warmupCurrentStep: 'done',
             });
             makeLog('success', email, `✅ ${email}: API Key gerada: ${result.googleAdsApiKey.slice(0, 10)}...`);
-            broadcast('account-update', { id, googleAdsApiKey: result.googleAdsApiKey, warmupStatus: 'idle', warmupCurrentStep: 'done' });
+            broadcast('account-update', { id, googleAdsApiKey: result.googleAdsApiKey, googleAdsAccountId: result.googleAdsAccountId || null, warmupStatus: 'idle', warmupCurrentStep: 'done' });
           } else {
             const errMsg = result.error || 'API Key não foi gerada';
             updateAccount(id, { warmupStatus: 'idle', warmupCurrentStep: 'error' });

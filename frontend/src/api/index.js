@@ -69,6 +69,10 @@ export const api = {
   startWarmupAccount: (id) => req('POST', `/accounts/${id}/warmup`),
   runGoogleAds: (accountIds) => req('POST', '/warmup/google-ads', { accountIds }),
 
+  // Recovery Email
+  getRecoveryStatus: () => req('GET', '/accounts/recovery-status'),
+  updateRecoveryEmail: (accountIds) => req('POST', '/accounts/update-recovery-email', { accountIds }),
+
   // Ready Accounts
   exportCookies: (accountIds) => req('POST', '/accounts/export-cookies', { accountIds: accountIds || [] }),
 };

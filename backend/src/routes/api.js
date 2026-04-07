@@ -20,6 +20,7 @@ import {
 import { stopWorker, getWorkerStatus } from '../worker.js';
 import { runLoginAccounts, stopLoginWorker, getLoginWorkerStatus } from '../loginWorker.js';
 import { runWarmupCycle, runWarmupForSelectedAccounts, runGoogleAdsForAccounts, getWarmupWorkerStatus, checkExpiredWarmups, cleanupStuckWarmingAccounts, startWarmup } from '../warmupWorker.js';
+import { runRecoveryEmailUpdate, getRecoveryWorkerStatus } from '../recoveryEmailWorker.js';
 import { setupSchedules, setupWarmupSchedule } from '../scheduler.js';
 import { addClient, removeClient, broadcast } from '../events.js';
 import { validateCredentials, generateToken, authMiddleware, validateToken } from '../auth.js';
@@ -423,6 +424,20 @@ router.post('/warmup/google-ads', (req, res) => {
 router.post('/warmup/cleanup-stuck', (_req, res) => {
   const count = cleanupStuckWarmingAccounts();
   res.json({ cleaned: count });
+});
+
+// ── RECOVERY EMAIL ────────────────────────────────────────────
+router.get('/accounts/recovery-status', (_req, res) => {
+  res.json(getRecoveryWorkerStatus());
+});
+
+router.post('/accounts/update-recovery-email', (req, res) => {
+  const { accountIds } = req.body || {};
+  if (!accountIds || accountIds.length === 0) {
+    return res.status(400).json({ error: 'Nenhuma conta selecionada' });
+  }
+  runRecoveryEmailUpdate(accountIds).catch((err) => console.error('[api] Recovery email error:', err.message));
+  res.json({ started: true });
 });
 
 // Inicia aquecimento de uma conta específica

@@ -100,6 +100,7 @@ export default function ReadyAccounts() {
       content += `Senha:    ${account.password}\n`;
       content += `Proxy:    ${account.proxy || 'Nenhum'}\n`;
       content += `API Key:  ${account.googleAdsApiKey || 'Não gerada'}\n`;
+      content += `Ads ID:   ${account.googleAdsAccountId || 'Não capturado'}\n`;
       content += `Dias:     ${account.warmupDaysDone}/3\n`;
       content += `Concluído: ${account.completedAt ? new Date(account.completedAt).toLocaleString('pt-BR') : '—'}\n`;
       content += `Cookies:  ${account.cookiesAvailable ? account.cookies.length + ' cookies' : 'Não disponível'}\n`;
@@ -208,6 +209,7 @@ export default function ReadyAccounts() {
             <div className="flex-1">Email</div>
             <div className="w-32">Proxy</div>
             <div className="w-24 text-center">Dias</div>
+            <div className="w-28 text-center">Ads ID</div>
             <div className="w-28 text-center">API Key</div>
             <div className="w-40 text-center">Concluído em</div>
           </div>
@@ -249,6 +251,18 @@ export default function ReadyAccounts() {
                 <span className="text-sm font-bold text-green-400">
                   {account.warmupDaysDone || 0}/3
                 </span>
+              </div>
+
+              <div className="w-28 text-center">
+                {account.googleAdsAccountId ? (
+                  <span className="text-xs px-2 py-1 rounded-full bg-blue-900/50 text-blue-400 font-mono" title={account.googleAdsAccountId}>
+                    {account.googleAdsAccountId}
+                  </span>
+                ) : (
+                  <span className="text-xs px-2 py-1 rounded-full bg-gray-800 text-gray-500">
+                    —
+                  </span>
+                )}
               </div>
 
               <div className="w-28 text-center">

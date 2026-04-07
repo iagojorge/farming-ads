@@ -870,139 +870,93 @@ async function browseGmail(page, log) {
 
 // ── Etapa 5: Criar Conta Google Ads + API Key ────────────────
 
+/** Helper: clica no primeiro elemento encontrado dentre vários seletores */
+async function clickFirst(page, selectors, label, log, timeout = 15000) {
+  for (const sel of selectors) {
+    try {
+      const el = page.locator(sel).first();
+      await el.waitFor({ state: 'visible', timeout });
+      log(`  ✓ [${label}] encontrado — clicando...`);
+      await el.click();
+      return true;
+    } catch { /* próximo seletor */ }
+  }
+  log(`  ❌ [${label}] não encontrado`);
+  return false;
+}
+
 /**
- * Acessa ads.google.com, cria conta, depois vai ao Cloud Console
- * ativar a API do Google Ads e criar uma chave de API.
- * Retorna a chave gerada (ou null se falhar).
+ * Acessa ads.google.com, cria conta Google Ads (captura o ID da conta),
+ * depois vai ao Cloud Console criar projeto e gerar API Key.
+ * Retorna { apiKey, googleAdsAccountId }.
  */
 async function createGoogleAdsAccount(page, log) {
   let apiKey = null;
+  let googleAdsAccountId = null;
 
   // ── Parte 1: Criar conta Google Ads ──────────────────────
-  log('🔷 Criando conta Google Ads...');
+  log('🔷 [1/3] Criando conta Google Ads...');
   try {
     await page.goto('https://ads.google.com', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await sleep(randomDelay(4000, 6000));
 
-    // Usa XPath que você passou: //*[@id="page-content"]/div/section[1]/div[2]/div[2]/div/a[1]
-    let clicked = false;
-    try {
-      const startBtn = await page.locator('//*[@id="page-content"]/div/section[1]/div[2]/div[2]/div/a[1]');
-      if (startBtn) {
-        log('✓ Acehn botão "Começar agora" pelo XPath — clicando...');
-        await startBtn.click();
-        clicked = true;
-        await sleep(randomDelay(5000, 8000));
-      }
-    } catch (e) {
-      log(`⚠️ XPath não funcionou: ${e.message}`);
-    }
+    const url0 = page.url();
+    log(`📍 URL: ${url0}`);
 
-    // Fallback: tenta outros seletores
-    if (!clicked) {
-      try {
-        const startBtn = await page.getByRole('link').filter({ hasText: /Começar agora|Start now|Get started/i }).first();
-        log('✓ Achou "Começar agora" por role=link — clicando...');
-        await startBtn.click();
-        clicked = true;
-        await sleep(randomDelay(5000, 8000));
-      } catch (e) {
-        log(`⚠️ Role=link falhou: ${e.message}`);
-      }
-    }
-
-    if (!clicked) {
-      try {
-        const startBtn = await page.getByRole('button').filter({ hasText: /Começar agora|Start now|Get started/i }).first();
-        log('✓ Achou "Começar agora" por role=button — clicando...');
-        await startBtn.click();
-        clicked = true;
-        await sleep(randomDelay(5000, 8000));
-      } catch (e) {
-        log(`⚠️ Role=button falhou: ${e.message}`);
-      }
-    }
-
-    if (!clicked) {
-      log('❌ Não conseguiu clicar em "Começar agora" com nenhum seletor');
-      log('📋 Dica: Use o XPath que você passou ou capture novo do navegador');
-    }
-
-    // Aguarda página carregar
-    try {
-      await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
-    } catch { /* ok */ }
-    await sleep(randomDelay(3000, 5000));
-
-    // Salva estado pra debug
-    const url1 = page.url();
-    log(`📍 URL após "Começar agora": ${url1}`);
-
-    log('✅ Etapa 1 (Google Ads) concluída');
-  } catch (err) {
-    log(`⚠️ Erro ao criar conta Google Ads: ${err.message}`);
-  }
-
-  // ── Parte 2: Ativar API do Google Ads no Cloud Console ───
-  log('🔷 Ativando API do Google Ads no Cloud Console...');
-  try {
-    await page.goto('https://console.cloud.google.com/apis/api/googleads.googleapis.com/overview', {
-      waitUntil: 'domcontentloaded',
-      timeout: 30000,
-    });
-    await sleep(randomDelay(6000, 9000));
-
-    const url2 = page.url();
-    log(`📍 URL da API: ${url2}`);
-
-    // Procura botão "Ativar" com detalhamento
-    let enableFound = false;
-    
-    // Tenta várias combinações de seletores
-    const selectors = [
-      { type: 'role', value: 'button', filter: /Ativar|Enable|ATIVAR|ENABLE|HABILITAR/i },
-      { type: 'xpath', value: '//*[contains(text(), "Ativar")]' },
-      { type: 'xpath', value: '//*[contains(text(), "Enable")]' },
-      { type: 'role', value: 'button', filter: /ENABLE/ },
-    ];
-
-    for (const selector of selectors) {
-      try {
-        if (selector.type === 'role') {
-          const btn = await page.getByRole(selector.value).filter({ hasText: selector.filter }).first();
-          if (btn) {
-            log(`✓ Achou "Ativar" por ${selector.type}="${selector.value}" — clicando...`);
-            await btn.click();
-            enableFound = true;
-            break;
-          }
-        } else if (selector.type === 'xpath') {
-          const btn = await page.locator(selector.value).first();
-          if (btn) {
-            log(`✓ Achou "Ativar" por xpath — clicando...`);
-            await btn.click();
-            enableFound = true;
-            break;
-          }
-        }
-      } catch (e) {
-        log(`⚠️ Seletor [${selector.type}] não funcionou`);
-      }
-    }
-
-    if (enableFound) {
-      await sleep(randomDelay(5000, 8000));
-      log('✅ API do Google Ads ativada');
+    // Se já tem conta, pula
+    if (url0.includes('ads.google.com/aw') || url0.includes('ads.google.com/home')) {
+      log('✅ Conta Google Ads já existe');
     } else {
-      log('❌ Botão "Ativar" não encontrado — API pode já estar ativada OU seletor tá errado');
-      log('📋 Dica: Verifique no navegador qual é o seletor do botão "Ativar"');
+      // Clica "Começar agora"
+      await clickFirst(page, [
+        'xpath=//*[@id="page-content"]/div/section[1]/div[2]/div[2]/div/a[1]',
+        'a:has-text("Começar agora")',
+        'a:has-text("Start now")',
+        'a:has-text("Get started")',
+        'button:has-text("Começar agora")',
+      ], 'Começar agora', log);
+
+      await sleep(randomDelay(5000, 8000));
+      try { await page.waitForLoadState('networkidle', { timeout: 10000 }); } catch {}
+      await sleep(randomDelay(2000, 4000));
     }
+
+    // Captura o ID da conta Google Ads (número tipo 123-456-7890)
+    try {
+      const adsUrl = page.url();
+      log(`📍 URL pós-ads: ${adsUrl}`);
+      
+      // Do URL (formato /aw/overview?ocid=XXXXXXXXXX ou customerId=...)
+      let urlIdMatch = adsUrl.match(/(?:ocid|customerId)=(\d+)/);
+      if (urlIdMatch) {
+        googleAdsAccountId = urlIdMatch[1];
+      }
+
+      // Do HTML — número formatado XXX-XXX-XXXX
+      if (!googleAdsAccountId) {
+        const htmlContent = await page.content();
+        const idMatch = htmlContent.match(/\b(\d{3}[-\s]?\d{3}[-\s]?\d{4})\b/);
+        if (idMatch) {
+          googleAdsAccountId = idMatch[1].replace(/[-\s]/g, '');
+        }
+      }
+
+      if (googleAdsAccountId) {
+        log(`✅ Google Ads Account ID: ${googleAdsAccountId}`);
+      } else {
+        log('⚠️ Não conseguiu capturar ID da conta Google Ads');
+      }
+    } catch (err) {
+      log(`⚠️ Erro ao capturar ID: ${err.message}`);
+    }
+
+    log('✅ [1/3] Concluída');
   } catch (err) {
-    log(`⚠️ Erro geral ao ativar API: ${err.message}`);
+    log(`⚠️ Erro na Parte 1: ${err.message}`);
   }
 
-  // ── Parte 3: Criar chave de API ──────────────────────────
-  log('🔷 Criando chave de API...');
+  // ── Parte 2: Cloud Console — criar projeto (se necessário) ─
+  log('🔷 [2/3] Cloud Console — Credenciais...');
   try {
     await page.goto('https://console.cloud.google.com/apis/credentials', {
       waitUntil: 'domcontentloaded',
@@ -1010,151 +964,224 @@ async function createGoogleAdsAccount(page, log) {
     });
     await sleep(randomDelay(6000, 9000));
 
-    const url3 = page.url();
-    log(`📍 URL de credenciais: ${url3}`);
+    const urlCreds = page.url();
+    log(`📍 URL: ${urlCreds}`);
 
-    // Procura "Criar credenciais" com detalhamento
-    let credsClicked = false;
-    
-    const credsSelectors = [
-      { type: 'role', value: 'button', filter: /Criar credenciais|Create credentials|CREATE CREDENTIALS|CRIAR CREDENCIAIS/ },
-      { type: 'xpath', value: '//*[contains(text(), "Criar credenciais")]' },
-      { type: 'xpath', value: '//*[contains(text(), "Create credentials")]' },
-      { type: 'role', value: 'button', filter: /CREATE/ },
-      { type: 'xpath', value: '//button[contains(@aria-label, "Create")]' },
-    ];
+    // Aceita termos / modal inicial se aparecer (checkbox + botão confirmar)
+    try {
+      // Tenta encontrar qualquer modal/dialog com checkbox
+      const checkbox = await page.$('mat-dialog-container input[type="checkbox"], mat-checkbox, [role="dialog"] input[type="checkbox"], input[type="checkbox"]');
+      if (checkbox) {
+        log('  Modal/termos detectada — marcando checkbox...');
+        await checkbox.click();
+        await sleep(1500);
 
-    for (const selector of credsSelectors) {
-      try {
-        if (selector.type === 'role') {
-          const btn = await page.getByRole(selector.value).filter({ hasText: selector.filter }).first();
-          if (btn) {
-            log(`✓ Achou "Criar credenciais" por ${selector.type}="${selector.value}" — clicando...`);
-            await btn.click();
-            credsClicked = true;
-            break;
-          }
-        } else if (selector.type === 'xpath') {
-          const btn = await page.locator(selector.value).first();
-          if (btn) {
-            log(`✓ Achou "Criar credenciais" por xpath — clicando...`);
-            await btn.click();
-            credsClicked = true;
-            break;
-          }
-        }
-      } catch (e) {
-        log(`⚠️ Seletor [${selector.type}] para credenciais não funcionou`);
+        // Clica no botão de confirmar da modal
+        await clickFirst(page, [
+          'mat-dialog-container button:has-text("Concordar")',
+          'mat-dialog-container button:has-text("Agree")',
+          'mat-dialog-container button:has-text("Aceitar")',
+          'mat-dialog-container button:has-text("Accept")',
+          'mat-dialog-container button:has-text("OK")',
+          'mat-dialog-container button:has-text("Continuar")',
+          'mat-dialog-container button:has-text("Continue")',
+          '[role="dialog"] button:has-text("Concordar")',
+          '[role="dialog"] button:has-text("Agree")',
+          '[role="dialog"] button:has-text("OK")',
+          'button:has-text("Concordar")',
+          'button:has-text("Agree")',
+          'button:has-text("CONCORDAR E CONTINUAR")',
+          'button:has-text("AGREE AND CONTINUE")',
+          'button:has-text("Aceitar")',
+          'button:has-text("Accept")',
+        ], 'Confirmar modal', log, 8000);
+        await sleep(randomDelay(3000, 5000));
+        log('  ✅ Modal aceita');
       }
+    } catch { /* sem modal/termos */ }
+
+    // Pode pedir pra criar projeto
+    log('  Verificando se precisa criar projeto...');
+    const needsProject = await clickFirst(page, [
+      'cfc-message-actions button',
+      'button:has-text("Criar projeto")',
+      'button:has-text("Create project")',
+      'button:has-text("Create Project")',
+    ], 'Criar projeto', log, 8000);
+
+    if (needsProject) {
+      await sleep(randomDelay(4000, 6000));
+
+      // Clica no botão "Criar" do formulário de criação de projeto
+      log('  Clicando no botão Criar do formulário...');
+      await clickFirst(page, [
+        'xpath=//*[@id="p6ntest-project-create-page"]/cfc-panel-body/cfc-virtual-viewport/div[1]/div/proj-creation-form/form/button[1]',
+        'proj-creation-form form > button:first-of-type',
+        'xpath=//proj-creation-form//form/button[1]',
+      ], 'Criar projeto (submit)', log, 15000);
+
+      await sleep(randomDelay(8000, 12000));
+      log('  Projeto criado, aguardando...');
+      try { await page.waitForLoadState('networkidle', { timeout: 15000 }); } catch {}
+      await sleep(randomDelay(3000, 5000));
+
+      // Renavega pra credenciais
+      log('  Renavegando para credenciais...');
+      await page.goto('https://console.cloud.google.com/apis/credentials', {
+        waitUntil: 'domcontentloaded',
+        timeout: 30000,
+      });
+      await sleep(randomDelay(6000, 9000));
     }
+
+    log('✅ [2/3] Concluída');
+  } catch (err) {
+    log(`⚠️ Erro na Parte 2: ${err.message}`);
+  }
+
+  // ── Parte 3: Criar chave de API ──────────────────────────
+  log('🔷 [3/3] Criando chave de API...');
+  try {
+    const urlNow = page.url();
+    log(`📍 URL: ${urlNow}`);
+
+    // Passo 1: "Criar credenciais"
+    log('  Passo 1: Criar credenciais...');
+    const credsClicked = await clickFirst(page, [
+      '[id$="action-bar-create-button"]',
+      'xpath=//*[contains(@id, "action-bar-create-button")]',
+      'button:has-text("Criar credenciais")',
+      'button:has-text("Create credentials")',
+    ], 'Criar credenciais', log, 15000);
 
     if (!credsClicked) {
-      log('❌ Botão "Criar credenciais" não encontrado');
-      log('📋 Dica: Verifique no navegador qual é o seletor/xpath do botão "Criar credenciais"');
-      throw new Error('Botão "Criar credenciais" não encontrado');
+      log('❌ Abortando — sem botão "Criar credenciais"');
+      return { apiKey: null, googleAdsAccountId };
     }
+    await sleep(randomDelay(2000, 4000));
 
-    await sleep(randomDelay(3000, 5000));
-
-    // Procura "Chave de API"
-    log('🔍 Procurando "Chave de API"...');
-    let apiKeyClicked = false;
-
-    const apiKeySelectors = [
-      { type: 'role', value: 'link', filter: /Chave de API|API key|API Key/ },
-      { type: 'role', value: 'button', filter: /Chave de API|API key|API Key/ },
-      { type: 'xpath', value: '//*[contains(text(), "Chave de API")]' },
-      { type: 'xpath', value: '//*[contains(text(), "API key")]' },
-    ];
-
-    for (const selector of apiKeySelectors) {
-      try {
-        if (selector.type === 'role') {
-          const elem = await page.getByRole(selector.value).filter({ hasText: selector.filter }).first();
-          if (elem) {
-            log(`✓ Achou "Chave de API" por ${selector.type}="${selector.value}" — clicando...`);
-            await elem.click();
-            apiKeyClicked = true;
-            break;
-          }
-        } else if (selector.type === 'xpath') {
-          const elem = await page.locator(selector.value).first();
-          if (elem) {
-            log(`✓ Achou "Chave de API" por xpath — clicando...`);
-            await elem.click();
-            apiKeyClicked = true;
-            break;
-          }
-        }
-      } catch (e) {
-        log(`⚠️ Seletor [${selector.type}] para "Chave de API" não funcionou`);
-      }
-    }
+    // Passo 2: "Chave de API" no dropdown
+    log('  Passo 2: Chave de API...');
+    const apiKeyClicked = await clickFirst(page, [
+      'cfc-menu-item:first-of-type a',
+      'cfc-menu-item a:has-text("Chave de API")',
+      'cfc-menu-item a:has-text("API key")',
+      'a:has-text("Chave de API")',
+      'a:has-text("API key")',
+      '[role="menuitem"]:has-text("Chave de API")',
+      '[role="menuitem"]:has-text("API key")',
+    ], 'Chave de API', log, 10000);
 
     if (!apiKeyClicked) {
-      log('❌ "Chave de API" não encontrado — talvez seja um link numa dropdown');
-      log('📋 Dica: Verifique qual é o seletor/xpath da opção "Chave de API"');
-    } else {
-      await sleep(randomDelay(5000, 10000));
+      log('❌ Abortando — sem opção "Chave de API"');
+      return { apiKey: null, googleAdsAccountId };
+    }
+    await sleep(randomDelay(4000, 7000));
 
-      // Aguarda modal/dialog
-      log('⏳ Aguardando modal com a chave...');
+    // Passo 3: Tipo de restrição (primeiro select)
+    log('  Passo 3: Select restrição...');
+    const select1 = await clickFirst(page, [
+      '[id$="cfc-select-1"] > div',
+      'xpath=//*[contains(@id, "cfc-select-1")]/div',
+      'cfc-select:first-of-type > div',
+    ], 'Select 1', log, 8000);
+
+    if (select1) {
+      await sleep(randomDelay(1500, 3000));
+
+      // Passo 4: Selecionar opção (mat-option)
+      log('  Passo 4: Opção de API...');
+      await clickFirst(page, [
+        'mat-option:has-text("Google Ads API")',
+        'mat-option:has-text("Restringir chave")',
+        'mat-option:has-text("Restrict key")',
+        'mat-option:last-of-type',
+      ], 'Mat-option', log, 8000);
+      await sleep(randomDelay(1500, 3000));
+
+      // Passo 5: Confirmar select (OK)
+      log('  Passo 5: OK confirmar...');
+      await clickFirst(page, [
+        'cfc-select-ok-cancel-buttons button:last-of-type',
+        'cfc-select-ok-cancel-buttons button:has-text("OK")',
+        'cfc-select-ok-cancel-buttons button:nth-of-type(2)',
+      ], 'OK select', log, 8000);
+      await sleep(randomDelay(2000, 4000));
+    }
+
+    // Passo 6: Criar chave (botão final)
+    log('  Passo 6: Botão criar chave...');
+    await clickFirst(page, [
+      'apis-create-api-key-subtask cfc-progress-button button',
+      'cfc-progress-button button:has-text("Criar")',
+      'cfc-progress-button button:has-text("Create")',
+      'button:has-text("Criar chave")',
+      'button:has-text("Create key")',
+    ], 'Criar chave', log, 10000);
+    await sleep(randomDelay(5000, 10000));
+
+    // Passo 7: Capturar a chave
+    log('  Passo 7: Capturando chave...');
+
+    // mat-form-field input
+    try {
+      const matInput = await page.$('apis-create-api-key-subtask mat-form-field input');
+      if (matInput) {
+        apiKey = await matInput.inputValue();
+        if (apiKey) log(`  ✓ Chave de mat-form-field input: ${apiKey.slice(0, 15)}...`);
+      }
+    } catch {}
+
+    // mat-form-field textarea
+    if (!apiKey) {
       try {
-        await page.waitForSelector('div[role="dialog"], textarea, input[readonly], pre, code', { timeout: 15000 });
-        log('✓ Modal/elemento com chave apareceu');
-      } catch {
-        log('⚠️ Modal não apareceu em 15s');
-      }
-
-      await sleep(randomDelay(2000, 3000));
-
-      // Tenta pegar a chave
-      log('🔍 Procurando chave na página...');
-      
-      // Procura textarea
-      let textarea = await page.$('textarea');
-      if (textarea) {
-        apiKey = await textarea.evaluate(el => el.value);
-        log(`✓ Achou chave em <textarea>: ${apiKey.slice(0, 20)}...`);
-      }
-
-      // Procura input readonly
-      if (!apiKey) {
-        let input = await page.$('input[readonly]');
-        if (input) {
-          apiKey = await input.inputValue();
-          log(`✓ Achou chave em <input readonly>: ${apiKey.slice(0, 20)}...`);
+        const matTa = await page.$('apis-create-api-key-subtask mat-form-field textarea');
+        if (matTa) {
+          apiKey = await matTa.evaluate(el => el.value);
+          if (apiKey) log(`  ✓ Chave de mat-form-field textarea: ${apiKey.slice(0, 15)}...`);
         }
-      }
+      } catch {}
+    }
 
-      // Procura no HTML inteiro
-      if (!apiKey) {
-        const pageContent = await page.content();
-        const keyMatch = pageContent.match(/AIza[A-Za-z0-9_-]{35,39}/);
-        if (keyMatch) {
-          apiKey = keyMatch[0];
-          log(`✓ Achou chave no HTML: ${apiKey.slice(0, 20)}...`);
+    // Qualquer input com AIza
+    if (!apiKey) {
+      try {
+        const inputs = await page.$$('input[type="text"], textarea, input[readonly]');
+        for (const inp of inputs) {
+          const val = await inp.inputValue().catch(() => inp.evaluate(el => el.value));
+          if (val && val.startsWith('AIza')) {
+            apiKey = val.trim();
+            log(`  ✓ Chave de input genérico: ${apiKey.slice(0, 15)}...`);
+            break;
+          }
         }
-      }
+      } catch {}
+    }
 
-      if (apiKey) {
-        log(`✅ Chave de API capturada: ${apiKey.slice(0, 10)}...`);
-      } else {
-        log('❌ Chave não foi encontrada em textarea, input ou HTML');
-        log('📋 Dica: Verifique como a chave aparece no modal (em qual elemento HTML)');
-      }
+    // Regex no HTML
+    if (!apiKey) {
+      try {
+        const html = await page.content();
+        const m = html.match(/AIza[A-Za-z0-9_-]{35,39}/);
+        if (m) {
+          apiKey = m[0];
+          log(`  ✓ Chave do HTML: ${apiKey.slice(0, 15)}...`);
+        }
+      } catch {}
+    }
+
+    if (apiKey) {
+      apiKey = apiKey.trim();
+      log(`✅ API Key: ${apiKey.slice(0, 10)}...`);
+    } else {
+      log('❌ Não foi possível capturar a chave');
     }
   } catch (err) {
-    log(`⚠️ Erro ao criar chave de API: ${err.message}`);
+    log(`⚠️ Erro na Parte 3: ${err.message}`);
   }
 
-  if (apiKey) {
-    log(`✅ API Key final: ${apiKey.slice(0, 10)}...`);
-  } else {
-    log('❌ Não foi possível gerar API Key');
-  }
-
-  return apiKey;
+  log(`📊 Resultado — Key: ${apiKey ? apiKey.slice(0, 10) + '...' : 'NÃO'} | Ads ID: ${googleAdsAccountId || 'NÃO'}`);
+  return { apiKey, googleAdsAccountId };
 }
 
 // ── Executor principal ────────────────────────────────────────
@@ -1267,8 +1294,11 @@ export async function runWarmupSession(account, log = console.log, dayNumber = 1
 
     // 5. Google Ads + API Key (último dia — cria a conta e gera chave)
     let googleAdsApiKey = null;
+    let googleAdsAccountId = null;
     if (dayNumber >= TIMINGS.warmupDays) {
-      googleAdsApiKey = await createGoogleAdsAccount(page, log);
+      const adsResult = await createGoogleAdsAccount(page, log);
+      googleAdsApiKey = adsResult.apiKey;
+      googleAdsAccountId = adsResult.googleAdsAccountId;
     }
 
     // Salva cookies do perfil para exportação posterior
@@ -1283,7 +1313,7 @@ export async function runWarmupSession(account, log = console.log, dayNumber = 1
     }
 
     log(`Sessão de aquecimento concluída para ${account.email}`);
-    return { success: true, googleAdsApiKey };
+    return { success: true, googleAdsApiKey, googleAdsAccountId };
 
   } catch (err) {
     log(`ERRO no aquecimento de ${account.email}: ${err.message}`);
@@ -1308,6 +1338,8 @@ export async function runWarmupSession(account, log = console.log, dayNumber = 1
  * Abre browser com o perfil da conta, faz login e executa apenas
  * o fluxo de criação de conta Google Ads + geração de API Key.
  */
+export { loginGoogle, clickFirst, sleep, parseProxy, PROFILES_DIR };
+
 export async function runGoogleAdsOnly(account, log = console.log) {
   const profilePath = join(PROFILES_DIR, account.id);
   if (!existsSync(profilePath)) mkdirSync(profilePath, { recursive: true });
@@ -1367,7 +1399,7 @@ export async function runGoogleAdsOnly(account, log = console.log) {
     await loginGoogle(page, account.email, account.password, log, account.recoveryEmail);
 
     // Só o fluxo Google Ads + API Key
-    const apiKey = await createGoogleAdsAccount(page, log);
+    const adsResult = await createGoogleAdsAccount(page, log);
 
     // Salva cookies atualizados
     try {
@@ -1380,7 +1412,7 @@ export async function runGoogleAdsOnly(account, log = console.log) {
       log(`⚠️ Não foi possível salvar cookies: ${e.message}`);
     }
 
-    return { success: true, googleAdsApiKey: apiKey };
+    return { success: true, googleAdsApiKey: adsResult.apiKey, googleAdsAccountId: adsResult.googleAdsAccountId };
   } catch (err) {
     log(`ERRO no fluxo Google Ads de ${account.email}: ${err.message}`);
     return { success: false, error: err.message };
