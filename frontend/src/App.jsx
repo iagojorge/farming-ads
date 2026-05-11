@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'sonner';
+import { Toaster, toast } from 'sonner';
 import { useAuth } from './hooks/useAuth.js';
 import Sidebar from './components/Sidebar.jsx';
 import Dashboard from './pages/Dashboard.jsx';
@@ -28,6 +28,19 @@ function ProtectedApp() {
         if (event === 'login-status') setLoginStatus(data);
         if (event === 'account-update') setAccountUpdates(data);
         if (event === 'warming-status') setWorkerStatus((prev) => ({ ...prev, ...data }));
+
+        if (event === 'captcha_required') {
+          toast.warning(
+            `🤖 CAPTCHA necessário — ${data.email}\nResolva no browser aberto e o login continuará automaticamente.`,
+            { id: `captcha-${data.email}`, duration: Infinity, closeButton: true }
+          );
+        }
+        if (event === 'captcha_resolved') {
+          toast.success(`✅ CAPTCHA resolvido — ${data.email}`, { id: `captcha-${data.email}`, duration: 4000 });
+        }
+        if (event === 'captcha_timeout') {
+          toast.error(`❌ CAPTCHA não resolvido em 5 min — ${data.email}`, { id: `captcha-${data.email}`, duration: 8000 });
+        }
       },
       getToken()
     );

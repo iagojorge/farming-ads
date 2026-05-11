@@ -11,7 +11,7 @@ const DEFAULT_STORE = {
     adspowerUrl: 'http://local.adspower.net:50325',
     apiKey: '',
     groupName: 'Automatização teste',
-    concurrentBrowsers: 5,
+    concurrentBrowsers: 0,
     timezone: 'America/Sao_Paulo',
   },
   profiles: [],
@@ -124,13 +124,14 @@ export function getAccounts() {
   return store.accounts;
 }
 
-export function addAccount(email, password, proxy = '', recoveryEmail = '') {
+export function addAccount(email, password, proxy = '', recoveryEmail = '', cnpj = '') {
   const account = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     email,
     password,
     proxy,
     recoveryEmail,
+    cnpj,
     // Estados: pending → warming → ready_for_ads → synced | error | checkpoint
     status: 'pending',
     profileId: null,
@@ -156,12 +157,13 @@ export function addAccount(email, password, proxy = '', recoveryEmail = '') {
 
 export function addAccounts(list) {
   const now = Date.now();
-  const accounts = list.map(({ email, password, proxy, recoveryEmail }, i) => ({
+  const accounts = list.map(({ email, password, proxy, recoveryEmail, cnpj }, i) => ({
     id: `${now + i}-${Math.random().toString(36).slice(2)}`,
     email,
     password,
     proxy: proxy || '',
     recoveryEmail: recoveryEmail || '',
+    cnpj: cnpj || '',
     status: 'pending',
     profileId: null,
     error: null,

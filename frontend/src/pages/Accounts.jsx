@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
-import { Trash2, Play, Square, RefreshCw, CheckSquare, Square as SquareIcon, Flame } from 'lucide-react';
+import { Trash2, Play, Square, RefreshCw, CheckSquare, Square as SquareIcon, Flame, Pencil, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '../api/index.js';
 
@@ -50,9 +50,13 @@ export default function Accounts() {
   const [password, setPassword] = useState('');
   const [proxy, setProxy] = useState('');
   const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [cnpj, setCnpj] = useState('');
   const [csvText, setCsvText] = useState('');
-  const [addMode, setAddMode] = useState('single'); // 'single' | 'batch'
+  const [addMode, setAddMode] = useState('single'); // 'single' | 'batch' | 'cnpj'
   const [loading, setLoading] = useState(false);
+  const [editAccount, setEditAccount] = useState(null); // conta em edição
+  const [editLoading, setEditLoading] = useState(false);
+  const [cnpjImportText, setCnpjImportText] = useState('');
 
   useEffect(() => { loadAccounts(); }, []);
 
@@ -68,14 +72,16 @@ export default function Accounts() {
   async function handleAddSingle() {
     if (!email || !password) return toast.error('Email e senha são obrigatórios');
     if (!proxy) return toast.error('Proxy é obrigatório (host:port:user:pass)');
+    if (!cnpj) return toast.error('CNPJ é obrigatório');
     setLoading(true);
     try {
-      const account = await api.addAccount(email, password, proxy, recoveryEmail);
+      const account = await api.addAccount(email, password, proxy, recoveryEmail, cnpj);
       setAccounts((prev) => [...prev, account]);
       setEmail('');
       setPassword('');
       setProxy('');
       setRecoveryEmail('');
+      setCnpj('');
       toast.success('Conta adicionada — inicie o aquecimento quando quiser');
     } catch (e) {
       toast.error(e.message);
@@ -90,17 +96,64 @@ export default function Accounts() {
       .trim().split('\n').filter((l) => l.trim())
       .map((line) => {
         const parts = line.split(',').map((s) => s.trim());
-        return { email: parts[0], password: parts[1], proxy: parts[2] || '', recoveryEmail: parts[3] || '' };
+        return { email: parts[0], password: parts[1], proxy: parts[2] || '', recoveryEmail: parts[3] || '', cnpj: parts[4] || '' };
       })
       .filter((a) => a.email && a.password);
 
-    if (batch.length === 0) return toast.error('Nenhuma entrada válida. Use formato: email,senha,proxy');
+    if (batch.length === 0) return toast.error('Nenhuma entrada válida. Use formato: email,senha,proxy,recovery,cnpj');
     setLoading(true);
     try {
       const added = await api.addAccountsBatch(batch);
       setAccounts((prev) => [...prev, ...added]);
       setCsvText('');
       toast.success(`${added.length} conta(s) adicionada(s)`);
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ── Editar conta ────────────────────────────────────────
+  async function handleSaveEdit() {
+    if (!editAccount) return;
+    setEditLoading(true);
+    try {
+      const updated = await api.updateAccount(editAccount.id, {
+        email: editAccount.email,
+        password: editAccount.password,
+        proxy: editAccount.proxy,
+        recoveryEmail: editAccount.recoveryEmail,
+        cnpj: editAccount.cnpj,
+      });
+      setAccounts((prev) => prev.map((a) => a.id === updated.id ? updated : a));
+      setEditAccount(null);
+      toast.success('Conta atualizada!');
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setEditLoading(false);
+    }
+  }
+
+  // ── Importação em lote de CNPJs ─────────────────────────
+  async function handleBulkCnpj() {
+    const entries = cnpjImportText
+      .trim().split('\n').filter((l) => l.trim())
+      .map((line) => {
+        const [emailPart, cnpjPart] = line.split(',').map((s) => s.trim());
+        return { email: emailPart, cnpj: cnpjPart };
+      })
+      .filter((e) => e.email && e.cnpj);
+
+    if (entries.length === 0) return toast.error('Nenhuma entrada válida. Use: email,cnpj');
+    setLoading(true);
+    try {
+      const result = await api.bulkUpdateCnpj(entries);
+      toast.success(`${result.updated} conta(s) atualizadas com CNPJ`);
+      if (result.notFound?.length) toast.warning(`Não encontradas: ${result.notFound.join(', ')}`);
+      setCnpjImportText('');
+      loadAccounts();
     } catch (e) {
       toast.error(e.message);
     } finally {
@@ -156,14 +209,14 @@ export default function Accounts() {
 
       {/* Formulário de adicionar */}
       <div className="card p-5 space-y-4">
-        <div className="flex gap-1 bg-gray-900 p-1 rounded-lg w-fit">
-          {['single', 'batch'].map((m) => (
+        <div className="flex gap-1 bg-gray-900 p-1 rounded-lg w-fit flex-wrap">
+          {[['single', 'Uma conta'], ['batch', 'Lote (CSV)'], ['cnpj', 'Importar CNPJs']].map(([m, label]) => (
             <button
               key={m}
               onClick={() => setAddMode(m)}
               className={`px-4 py-1.5 text-sm rounded transition ${addMode === m ? 'bg-gray-700 text-gray-100' : 'text-gray-400 hover:text-gray-200'}`}
             >
-              {m === 'single' ? 'Uma conta' : 'Lote (CSV)'}
+              {label}
             </button>
           ))}
         </div>
@@ -182,23 +235,26 @@ export default function Accounts() {
                 className="input font-mono text-xs" disabled={loading} />
               <input type="email" placeholder="Email de recuperação (opcional)" value={recoveryEmail}
                 onChange={(e) => setRecoveryEmail(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddSingle()}
                 className="input text-xs" disabled={loading} />
+              <input type="text" placeholder="CNPJ (somente números, ex: 12345678000195)" value={cnpj}
+                onChange={(e) => setCnpj(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddSingle()}
+                className="input font-mono text-xs sm:col-span-2" disabled={loading} />
             </div>
             <button onClick={handleAddSingle}
-              disabled={loading || !email || !password || !proxy}
+              disabled={loading || !email || !password || !proxy || !cnpj}
               className="btn-primary w-full">
               <Play className="w-4 h-4" />
               Adicionar Conta
             </button>
           </div>
-        ) : (
+        ) : addMode === 'batch' ? (
           <div className="space-y-3">
             <p className="text-xs text-gray-500">
-              Uma conta por linha &rarr; <span className="font-mono text-gray-400">email,senha,host:port:user:pass,email-recuperacao</span>
+              Uma conta por linha &rarr; <span className="font-mono text-gray-400">email,senha,host:port:user:pass,email-recuperacao,cnpj</span>
             </p>
             <textarea
-              placeholder={"email1@gmail.com,senha1,181.215.24.56:15324:user1:pass1,email-recuperacao1@mail.com\nemail2@gmail.com,senha2,200.10.20.30:8080:user2:pass2,email-recuperacao2@mail.com"}
+              placeholder={"email1@gmail.com,senha1,181.215.24.56:15324:user1:pass1,recuperacao1@mail.com,12345678000195\nemail2@gmail.com,senha2,200.10.20.30:8080:user2:pass2,recuperacao2@mail.com,98765432000196"}
               value={csvText} onChange={(e) => setCsvText(e.target.value)}
               rows={6} className="input font-mono text-xs resize-none"
               disabled={loading} />
@@ -207,6 +263,23 @@ export default function Accounts() {
               className="btn-primary w-full">
               <Play className="w-4 h-4" />
               Adicionar Lote
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-xs text-gray-500">
+              Um por linha &rarr; <span className="font-mono text-gray-400">email,cnpj</span> &mdash; atualiza contas já cadastradas sem afetar cookies nem status de aquecimento.
+            </p>
+            <textarea
+              placeholder={"conta1@gmail.com,12345678000195\nconta2@gmail.com,98765432000196"}
+              value={cnpjImportText} onChange={(e) => setCnpjImportText(e.target.value)}
+              rows={6} className="input font-mono text-xs resize-none"
+              disabled={loading} />
+            <button onClick={handleBulkCnpj}
+              disabled={loading || !cnpjImportText.trim()}
+              className="btn-primary w-full">
+              <Play className="w-4 h-4" />
+              Atualizar CNPJs
             </button>
           </div>
         )}
@@ -233,7 +306,19 @@ export default function Accounts() {
             className="btn-secondary text-xs"
           >
             <Flame className="w-3 h-3 text-orange-400" />
-            Aquecer {selected.size > 0 ? `(${selected.size})` : `Agora (${pending + warming})`}
+            Aquecer {selected.size > 0 ? `(${selected.size})` : `Agora (${pending + warming + ready})`}
+          </button>
+          <button
+            onClick={async () => {
+              try {
+                await api.stopWarmup();
+                toast.info('Parando aquecimento...');
+              } catch (e) { toast.error(e.message); }
+            }}
+            className="btn-secondary text-xs text-red-400"
+          >
+            <Square className="w-3 h-3" />
+            Parar Warmup
           </button>
         </div>
       )}
@@ -253,7 +338,7 @@ export default function Accounts() {
                 </th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Proxy</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Perfil</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">CNPJ</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-4 py-3 w-10" />
               </tr>
@@ -286,16 +371,22 @@ export default function Accounts() {
                       </span>
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell text-xs text-gray-500 font-mono">
-                      {acc.profileId ?? '—'}
+                      {acc.cnpj ? acc.cnpj : <span className="text-yellow-600">sem CNPJ</span>}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <StatusBadge status={acc.status} />
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button onClick={() => handleDelete(acc.id)}
-                        className="p-1.5 hover:bg-red-900/50 hover:text-red-300 text-gray-600 rounded transition">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1">
+                        <button onClick={() => setEditAccount({ ...acc })}
+                          className="p-1.5 hover:bg-gray-700 text-gray-600 hover:text-gray-200 rounded transition">
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(acc.id)}
+                          className="p-1.5 hover:bg-red-900/50 hover:text-red-300 text-gray-600 rounded transition">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -308,6 +399,59 @@ export default function Accounts() {
       {accounts.length === 0 && (
         <div className="card text-center py-16 text-gray-600 text-sm">
           Nenhuma conta adicionada ainda
+        </div>
+      )}
+
+      {/* Modal de edição */}
+      {editAccount && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="card w-full max-w-lg p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold text-gray-100">Editar Conta</h2>
+              <button onClick={() => setEditAccount(null)} className="text-gray-500 hover:text-gray-200">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Email</label>
+                <input type="email" value={editAccount.email}
+                  onChange={(e) => setEditAccount((p) => ({ ...p, email: e.target.value }))}
+                  className="input w-full" disabled={editLoading} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Senha</label>
+                <input type="password" value={editAccount.password}
+                  onChange={(e) => setEditAccount((p) => ({ ...p, password: e.target.value }))}
+                  className="input w-full" disabled={editLoading} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Proxy (host:port:user:pass)</label>
+                <input type="text" value={editAccount.proxy || ''}
+                  onChange={(e) => setEditAccount((p) => ({ ...p, proxy: e.target.value }))}
+                  className="input w-full font-mono text-xs" disabled={editLoading} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Email de recuperação</label>
+                <input type="email" value={editAccount.recoveryEmail || ''}
+                  onChange={(e) => setEditAccount((p) => ({ ...p, recoveryEmail: e.target.value }))}
+                  className="input w-full text-xs" disabled={editLoading} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">CNPJ (somente números)</label>
+                <input type="text" value={editAccount.cnpj || ''}
+                  onChange={(e) => setEditAccount((p) => ({ ...p, cnpj: e.target.value }))}
+                  className="input w-full font-mono text-xs" disabled={editLoading} />
+              </div>
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button onClick={() => setEditAccount(null)}
+                className="btn-secondary flex-1" disabled={editLoading}>Cancelar</button>
+              <button onClick={handleSaveEdit}
+                disabled={editLoading || !editAccount.email || !editAccount.password}
+                className="btn-primary flex-1">Salvar</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

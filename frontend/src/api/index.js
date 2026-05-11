@@ -54,9 +54,11 @@ export const api = {
 
   // Accounts
   getAccounts: () => req('GET', '/accounts'),
-  addAccount: (email, password, proxy, recoveryEmail) => req('POST', '/accounts', { email, password, proxy, recoveryEmail }),
+  addAccount: (email, password, proxy, recoveryEmail, cnpj) => req('POST', '/accounts', { email, password, proxy, recoveryEmail, cnpj }),
   addAccountsBatch: (accounts) => req('POST', '/accounts/batch', { accounts }),
+  updateAccount: (id, data) => req('PUT', `/accounts/${id}`, data),
   deleteAccount: (id) => req('DELETE', `/accounts/${id}`),
+  bulkUpdateCnpj: (entries) => req('POST', '/accounts/bulk-cnpj', { entries }),
   // Login Worker
   getLoginStatus: () => req('GET', '/accounts/login-status'),
   startLogin: (accountIds) => req('POST', '/accounts/login', { accountIds }),
@@ -65,13 +67,18 @@ export const api = {
   // Warmup
   getWarmupStatus: () => req('GET', '/warmup/status'),
   triggerWarmup: (accountIds) => req('POST', '/warmup/run', { accountIds: accountIds || [] }),
+  stopWarmup: () => req('POST', '/warmup/stop'),
   checkExpiredWarmups: () => req('POST', '/warmup/check-expired'),
   startWarmupAccount: (id) => req('POST', `/accounts/${id}/warmup`),
   runGoogleAds: (accountIds) => req('POST', '/warmup/google-ads', { accountIds }),
+  stopGoogleAds: () => req('POST', '/warmup/google-ads/stop'),
+  openChrome: (accountIds) => req('POST', '/warmup/open-chrome', { accountIds }),
+  stopOpenChrome: () => req('POST', '/warmup/open-chrome/stop'),
 
   // Recovery Email
   getRecoveryStatus: () => req('GET', '/accounts/recovery-status'),
   updateRecoveryEmail: (accountIds) => req('POST', '/accounts/update-recovery-email', { accountIds }),
+  stopRecoveryEmail: () => req('POST', '/accounts/recovery-email/stop'),
 
   // Ready Accounts
   exportCookies: (accountIds) => req('POST', '/accounts/export-cookies', { accountIds: accountIds || [] }),

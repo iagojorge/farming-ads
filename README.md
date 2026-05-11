@@ -518,8 +518,6 @@ Playwright → HTTP CONNECT → localhost:RANDOM_PORT → SOCKS5 → Destino
 
 Worker para alterar o email de recuperação de contas Google em massa.
 
-**Email alvo:** `iagojorge@agencia-titan.com` (hardcoded)
-
 **Fluxo por conta:**
 1. Abre browser Chromium persistente com proxy
 2. Faz login via `loginGoogle()`

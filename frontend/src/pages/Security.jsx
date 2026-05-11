@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Shield, RefreshCw, Play, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Shield, RefreshCw, Play, CheckCircle, AlertTriangle, Square, Key, Mail, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '../api/index.js';
 
@@ -9,7 +9,8 @@ export default function Security() {
   const [selected, setSelected] = useState(new Set());
   const [running, setRunning] = useState(false);
 
-  const TARGET_EMAIL = 'iagojorge@agencia-titan.com';
+  const TARGET_EMAIL = 'dime@agencia-titan.com';
+  const TARGET_PASSWORD = '#ytskiro2026';
 
   const loadAccounts = async () => {
     setLoading(true);
@@ -25,6 +26,25 @@ export default function Security() {
 
   useEffect(() => {
     loadAccounts();
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    const url = `/api/events?token=${encodeURIComponent(token)}`;
+    const es = new EventSource(url);
+
+    es.addEventListener('recovery-status', (e) => {
+      const data = JSON.parse(e.data);
+      setRunning(data.isRunning);
+    });
+
+    es.addEventListener('account-update', (e) => {
+      const data = JSON.parse(e.data);
+      setAccounts((prev) =>
+        prev.map((a) => (a.id === data.id ? { ...a, ...data } : a))
+      );
+    });
+
+    return () => es.close();
   }, []);
 
   const toggleSelect = (id) => {
@@ -36,11 +56,11 @@ export default function Security() {
     });
   };
 
-  const toggleAll = (filtered) => {
-    if (selected.size === filtered.length) {
+  const toggleAll = () => {
+    if (selected.size === accounts.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(filtered.map((a) => a.id)));
+      setSelected(new Set(accounts.map((a) => a.id)));
     }
   };
 
@@ -52,34 +72,43 @@ export default function Security() {
     setRunning(true);
     try {
       await api.updateRecoveryEmail(ids);
-      toast.success(`Troca de email iniciada para ${ids.length} conta(s)!`);
+      toast.success(`Segurança iniciada para ${ids.length} conta(s)!`);
     } catch (err) {
       toast.error('Erro: ' + err.message);
-    } finally {
-      setRunning(false);
     }
   };
 
-  const needsUpdate = accounts.filter((a) => a.recoveryEmail !== TARGET_EMAIL);
-  const alreadyOk = accounts.filter((a) => a.recoveryEmail === TARGET_EMAIL);
-
-  const getTargetAccounts = () => {
-    if (selected.size > 0) {
-      return accounts.filter((a) => selected.has(a.id) && a.recoveryEmail !== TARGET_EMAIL);
+  const handleStop = async () => {
+    try {
+      await api.stopRecoveryEmail();
+      toast.info('Parando...');
+      setRunning(false);
+    } catch (err) {
+      toast.error('Erro ao parar: ' + err.message);
     }
-    return needsUpdate;
+  };
+
+  const emailOk = accounts.filter((a) => a.recoveryEmail === TARGET_EMAIL).length;
+  const passwordOk = accounts.filter((a) => a.password === TARGET_PASSWORD).length;
+  const blockedCount = accounts.filter((a) => a.status === 'desativada').length;
+  const pendingCount = accounts.filter((a) => a.status !== 'desativada' && (a.recoveryEmail !== TARGET_EMAIL || a.password !== TARGET_PASSWORD)).length;
+
+  const getTargetIds = () => {
+    if (selected.size > 0) return Array.from(selected);
+    return accounts
+      .filter((a) => a.status !== 'desativada' && (a.recoveryEmail !== TARGET_EMAIL || a.password !== TARGET_PASSWORD))
+      .map((a) => a.id);
   };
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Shield className="w-6 h-6 text-yellow-400" />
           <div>
             <h1 className="text-xl font-bold text-gray-100">Segurança</h1>
             <p className="text-sm text-gray-500">
-              Trocar email de recuperação das contas para <span className="text-yellow-400 font-mono">{TARGET_EMAIL}</span>
+              Trocar email de recuperação + senha das contas
             </p>
           </div>
         </div>
@@ -94,33 +123,55 @@ export default function Security() {
           </button>
 
           <button
-            onClick={() => handleRun(getTargetAccounts().map((a) => a.id))}
-            disabled={running || getTargetAccounts().length === 0}
+            onClick={() => handleRun(getTargetIds())}
+            disabled={running || getTargetIds().length === 0}
             className="flex items-center gap-2 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
           >
             <Play className="w-4 h-4" />
-            {running ? 'Rodando...' : `Trocar Email (${getTargetAccounts().length})`}
+            {running ? 'Rodando...' : `Executar (${getTargetIds().length})`}
           </button>
+
+          {running && (
+            <button
+              onClick={handleStop}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              <Square className="w-4 h-4" />
+              Parar
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="bg-gray-900 rounded-xl border border-gray-800 p-4">
           <div className="text-sm text-gray-500">Total de Contas</div>
           <div className="text-2xl font-bold text-gray-100">{accounts.length}</div>
         </div>
         <div className="bg-gray-900 rounded-xl border border-green-800/40 p-4">
-          <div className="text-sm text-green-400">Email Correto</div>
-          <div className="text-2xl font-bold text-green-400">{alreadyOk.length}</div>
+          <div className="flex items-center gap-1 text-sm text-green-400">
+            <Mail className="w-3 h-3" /> Email OK
+          </div>
+          <div className="text-2xl font-bold text-green-400">{emailOk}</div>
+        </div>
+        <div className="bg-gray-900 rounded-xl border border-green-800/40 p-4">
+          <div className="flex items-center gap-1 text-sm text-green-400">
+            <Key className="w-3 h-3" /> Senha OK
+          </div>
+          <div className="text-2xl font-bold text-green-400">{passwordOk}</div>
         </div>
         <div className="bg-gray-900 rounded-xl border border-yellow-800/40 p-4">
-          <div className="text-sm text-yellow-400">Precisa Trocar</div>
-          <div className="text-2xl font-bold text-yellow-400">{needsUpdate.length}</div>
+          <div className="text-sm text-yellow-400">Pendentes</div>
+          <div className="text-2xl font-bold text-yellow-400">{pendingCount}</div>
+        </div>
+        <div className="bg-gray-900 rounded-xl border border-red-800/40 p-4">
+          <div className="flex items-center gap-1 text-sm text-red-400">
+            <XCircle className="w-3 h-3" /> Bloqueadas
+          </div>
+          <div className="text-2xl font-bold text-red-400">{blockedCount}</div>
         </div>
       </div>
 
-      {/* Tabela */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <RefreshCw className="w-6 h-6 text-gray-500 animate-spin" />
@@ -137,21 +188,25 @@ export default function Security() {
               <input
                 type="checkbox"
                 checked={selected.size === accounts.length && accounts.length > 0}
-                onChange={() => toggleAll(accounts)}
+                onChange={toggleAll}
                 className="w-4 h-4 rounded accent-yellow-500 cursor-pointer"
               />
             </div>
-            <div className="flex-1">Email</div>
-            <div className="w-64">Email de Recuperação Atual</div>
-            <div className="w-28 text-center">Status</div>
+            <div className="flex-1">Email da Conta</div>
+            <div className="w-56">Email de Recuperação</div>
+            <div className="w-20 text-center">Email</div>
+            <div className="w-20 text-center">Senha</div>
+            <div className="w-24 text-center">Status</div>
           </div>
 
           {accounts.map((account) => {
-            const isOk = account.recoveryEmail === TARGET_EMAIL;
+            const emailIsOk = account.recoveryEmail === TARGET_EMAIL;
+            const pwIsOk = account.password === TARGET_PASSWORD;
+            const isBlocked = account.status === 'desativada';
             return (
               <div
                 key={account.id}
-                className={`flex items-center gap-4 px-4 py-3 border-b border-gray-800/50 hover:bg-gray-800/40 transition-colors cursor-pointer ${selected.has(account.id) ? 'bg-yellow-900/10' : ''}`}
+                className={`flex items-center gap-4 px-4 py-3 border-b border-gray-800/50 hover:bg-gray-800/40 transition-colors cursor-pointer ${selected.has(account.id) ? 'bg-yellow-900/10' : ''} ${isBlocked ? 'opacity-60' : ''}`}
                 onClick={() => toggleSelect(account.id)}
               >
                 <div className="w-6">
@@ -164,27 +219,46 @@ export default function Security() {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <span className="text-sm text-gray-200 truncate font-mono">{account.email}</span>
+                  <span className={`text-sm truncate font-mono ${isBlocked ? 'text-red-400' : 'text-gray-200'}`}>{account.email}</span>
                 </div>
 
-                <div className="w-64">
-                  <span className={`text-xs font-mono ${isOk ? 'text-green-400' : 'text-yellow-400'}`}>
+                <div className="w-56">
+                  <span className={`text-xs font-mono ${emailIsOk ? 'text-green-400' : 'text-yellow-400'}`}>
                     {account.recoveryEmail || '(não definido)'}
                   </span>
                 </div>
 
-                <div className="w-28 text-center">
-                  {isOk ? (
+                <div className="w-20 text-center">
+                  {emailIsOk ? (
                     <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-green-900/50 text-green-400">
                       <CheckCircle className="w-3 h-3" /> OK
                     </span>
-                  ) : account.recoveryEmail ? (
+                  ) : (
                     <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-yellow-900/50 text-yellow-400">
-                      <AlertTriangle className="w-3 h-3" /> Trocar
+                      <AlertTriangle className="w-3 h-3" />
+                    </span>
+                  )}
+                </div>
+
+                <div className="w-20 text-center">
+                  {pwIsOk ? (
+                    <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-green-900/50 text-green-400">
+                      <CheckCircle className="w-3 h-3" /> OK
                     </span>
                   ) : (
+                    <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-yellow-900/50 text-yellow-400">
+                      <AlertTriangle className="w-3 h-3" />
+                    </span>
+                  )}
+                </div>
+                <div className="w-24 text-center">
+                  {isBlocked ? (
                     <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-red-900/50 text-red-400">
-                      <XCircle className="w-3 h-3" /> Vazio
+                      <XCircle className="w-3 h-3" /> Bloqueada
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-gray-800 text-gray-500">
+                      Ativa
                     </span>
                   )}
                 </div>
@@ -194,14 +268,14 @@ export default function Security() {
         </div>
       )}
 
-      {/* Info */}
       <div className="bg-yellow-950/30 border border-yellow-800/40 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-yellow-300 mb-2">⚠️ Sobre a Troca de Email</h3>
+        <h3 className="text-sm font-medium text-yellow-300 mb-2">Sobre Segurança</h3>
         <ul className="text-xs text-yellow-400/80 space-y-1 list-disc list-inside">
-          <li>O sistema faz login em cada conta e altera o email de recuperação automaticamente</li>
-          <li>O Google pedirá um código de verificação no novo email — não é necessário validar</li>
-          <li>Após a troca, o campo <code>recoveryEmail</code> é atualizado no sistema para o login funcionar</li>
-          <li>Contas já com o email correto são ignoradas automaticamente</li>
+          <li>O sistema faz login, troca o email de recuperação para <code>{TARGET_EMAIL}</code> e a senha para a senha padrão</li>
+          <li>Ambas as tarefas rodam na mesma sessão do browser (login único)</li>
+          <li>Após a troca, os dados são atualizados automaticamente no sistema</li>
+          <li>Contas já com email e senha corretos são puladas automaticamente</li>
+          <li>Múltiplas contas rodam em paralelo para mais velocidade</li>
         </ul>
       </div>
     </div>

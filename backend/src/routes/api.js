@@ -19,8 +19,8 @@ import {
 } from '../store.js';
 import { stopWorker, getWorkerStatus } from '../worker.js';
 import { runLoginAccounts, stopLoginWorker, getLoginWorkerStatus } from '../loginWorker.js';
-import { runWarmupCycle, runWarmupForSelectedAccounts, runGoogleAdsForAccounts, getWarmupWorkerStatus, checkExpiredWarmups, cleanupStuckWarmingAccounts, startWarmup } from '../warmupWorker.js';
-import { runRecoveryEmailUpdate, getRecoveryWorkerStatus } from '../recoveryEmailWorker.js';
+import { runWarmupCycle, runWarmupForSelectedAccounts, runGoogleAdsForAccounts, runOpenChromeForAccounts, getWarmupWorkerStatus, checkExpiredWarmups, cleanupStuckWarmingAccounts, startWarmup, stopWarmupWorker, stopGoogleAdsWorker, stopOpenChromeWorker } from '../warmupWorker.js';
+import { runRecoveryEmailUpdate, getRecoveryWorkerStatus, stopRecoveryWorker } from '../recoveryEmailWorker.js';
 import { setupSchedules, setupWarmupSchedule } from '../scheduler.js';
 import { addClient, removeClient, broadcast } from '../events.js';
 import { validateCredentials, generateToken, authMiddleware, validateToken } from '../auth.js';
@@ -233,11 +233,14 @@ router.get('/accounts', (_req, res) => {
 });
 
 router.post('/accounts', (req, res) => {
-  const { email, password, proxy, recoveryEmail } = req.body;
+  const { email, password, proxy, recoveryEmail, cnpj } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: 'Email e senha são obrigatórios' });
   }
-  const account = addAccount(email, password, proxy || '', recoveryEmail || '');
+  if (!cnpj) {
+    return res.status(400).json({ error: 'CNPJ é obrigatório' });
+  }
+  const account = addAccount(email, password, proxy || '', recoveryEmail || '', cnpj);
   res.status(201).json(account);
 });
 
@@ -314,6 +317,27 @@ router.delete('/accounts/:id', (req, res) => {
   res.json({ success: true });
 });
 
+// Atualiza CNPJs em lote (email → CNPJ)
+router.post('/accounts/bulk-cnpj', (req, res) => {
+  const { entries } = req.body || {};
+  if (!Array.isArray(entries) || entries.length === 0) {
+    return res.status(400).json({ error: 'Envie um array de { email, cnpj }' });
+  }
+  const allAccounts = getAccounts();
+  let updated = 0;
+  const notFound = [];
+  for (const { email, cnpj } of entries) {
+    const acc = allAccounts.find((a) => a.email.toLowerCase() === email.toLowerCase());
+    if (acc) {
+      updateAccount(acc.id, { cnpj });
+      updated++;
+    } else {
+      notFound.push(email);
+    }
+  }
+  res.json({ updated, notFound });
+});
+
 // ── Exportar Cookies de Contas Prontas ────────────────────────
 router.post('/accounts/export-cookies', (req, res) => {
   const { accountIds } = req.body || {};
@@ -352,8 +376,11 @@ router.post('/accounts/export-cookies', (req, res) => {
       id: account.id,
       email: account.email,
       password: account.password || '',
+      recoveryEmail: account.recoveryEmail || null,
+      totpSecret: account.totpSecret || null,
       proxy: account.proxy || null,
       googleAdsApiKey: account.googleAdsApiKey || null,
+      googleAdsAccountId: account.googleAdsAccountId || null,
       warmupDaysDone: account.warmupDaysDone || 0,
       completedAt: account.lastWarmupAt || null,
       cookiesAvailable: !!cookies,
@@ -407,6 +434,11 @@ router.post('/warmup/run', (req, res) => {
   res.json({ started: true });
 });
 
+router.post('/warmup/stop', (_req, res) => {
+  stopWarmupWorker();
+  res.json({ stopped: true });
+});
+
 router.post('/warmup/check-expired', (_req, res) => {
   const count = checkExpiredWarmups();
   res.json({ markedReady: count });
@@ -419,6 +451,25 @@ router.post('/warmup/google-ads', (req, res) => {
   }
   runGoogleAdsForAccounts(accountIds).catch((err) => console.error('[api] Google Ads error:', err.message));
   res.json({ started: true });
+});
+
+router.post('/warmup/google-ads/stop', (_req, res) => {
+  stopGoogleAdsWorker();
+  res.json({ stopped: true });
+});
+
+router.post('/warmup/open-chrome', (req, res) => {
+  const { accountIds } = req.body || {};
+  if (!accountIds || accountIds.length === 0) {
+    return res.status(400).json({ error: 'Nenhuma conta selecionada' });
+  }
+  runOpenChromeForAccounts(accountIds).catch((err) => console.error('[api] Open Chrome error:', err.message));
+  res.json({ started: true });
+});
+
+router.post('/warmup/open-chrome/stop', async (_req, res) => {
+  await stopOpenChromeWorker();
+  res.json({ stopped: true });
 });
 
 router.post('/warmup/cleanup-stuck', (_req, res) => {
@@ -438,6 +489,11 @@ router.post('/accounts/update-recovery-email', (req, res) => {
   }
   runRecoveryEmailUpdate(accountIds).catch((err) => console.error('[api] Recovery email error:', err.message));
   res.json({ started: true });
+});
+
+router.post('/accounts/recovery-email/stop', (_req, res) => {
+  stopRecoveryWorker();
+  res.json({ stopped: true });
 });
 
 // Inicia aquecimento de uma conta específica

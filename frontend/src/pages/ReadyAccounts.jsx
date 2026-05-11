@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle, Download, RefreshCw, Package, Zap } from 'lucide-react';
+import { CheckCircle, Download, RefreshCw, Package, Zap, Square, Chrome, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '../api/index.js';
 
@@ -9,12 +9,20 @@ export default function ReadyAccounts() {
   const [selected, setSelected] = useState(new Set());
   const [exporting, setExporting] = useState(false);
   const [runningAds, setRunningAds] = useState(false);
+  const [openingChrome, setOpeningChrome] = useState(false);
+  const [stoppingChrome, setStoppingChrome] = useState(false);
+  const [chromeRunning, setChromeRunning] = useState(false);
 
   const loadAccounts = async () => {
     setLoading(true);
     try {
-      const all = await api.getAccounts();
+      const [all, warmupStatus] = await Promise.all([
+        api.getAccounts(),
+        api.getWarmupStatus(),
+      ]);
       setAccounts(all.filter((a) => a.status === 'ready_for_ads'));
+      setRunningAds(!!warmupStatus?.isGoogleAdsRunning);
+      setChromeRunning(!!warmupStatus?.isOpenChromeRunning);
     } catch (err) {
       toast.error('Erro ao carregar contas: ' + err.message);
     } finally {
@@ -52,32 +60,14 @@ export default function ReadyAccounts() {
 
     setExporting(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/accounts/export-cookies', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ accountIds: ids }),
-      });
+      const data = await api.exportCookies(ids);
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Erro ao exportar');
+      for (const account of data.accounts) {
+        const fileName = `${sanitizeEmailForFileName(account.email, account.id)}.txt`;
+        const txtContent = generateExportTxt(account);
+        downloadTextFile(txtContent, fileName);
+        await new Promise((resolve) => setTimeout(resolve, 120));
       }
-
-      const data = await res.json();
-
-      // Gera arquivo TXT com email, senha e cookies
-      const txtContent = generateExportTxt(data.accounts);
-      const blob = new Blob([txtContent], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `contas_prontas_${new Date().toISOString().slice(0, 10)}.txt`;
-      a.click();
-      URL.revokeObjectURL(url);
 
       toast.success(`✅ ${data.total} conta(s) exportada(s)!`);
     } catch (err) {
@@ -87,35 +77,117 @@ export default function ReadyAccounts() {
     }
   };
 
-  const generateExportTxt = (accounts) => {
+  const handleOpenChrome = async () => {
+    const ids = selected.size > 0 ? Array.from(selected) : [];
+    if (ids.length === 0) {
+      toast.error('Selecione ao menos 1 conta para abrir no Chrome');
+      return;
+    }
+
+    setOpeningChrome(true);
+    try {
+      await api.openChrome(ids);
+      setChromeRunning(true);
+      toast.success(`Chrome aberto para ${ids.length} conta(s)`);
+    } catch (err) {
+      toast.error('Erro ao abrir Chrome: ' + err.message);
+    } finally {
+      setOpeningChrome(false);
+    }
+  };
+
+  const [deletingSelected, setDeletingSelected] = useState(false);
+
+  const handleDeleteSelected = async () => {
+    if (selected.size === 0) return;
+    if (!confirm(`Remover ${selected.size} conta(s) selecionada(s)?`)) return;
+    setDeletingSelected(true);
+    try {
+      const ids = Array.from(selected);
+      await Promise.all(ids.map((id) => api.deleteAccount(id)));
+      setAccounts((prev) => prev.filter((a) => !ids.includes(a.id)));
+      setSelected(new Set());
+      toast.success(`${ids.length} conta(s) removida(s)`);
+    } catch (err) {
+      toast.error('Erro ao remover: ' + err.message);
+    } finally {
+      setDeletingSelected(false);
+    }
+  };
+
+  const handleDelete = async (e, id) => {
+    e.stopPropagation();
+    if (!confirm('Remover esta conta?')) return;
+    try {
+      await api.deleteAccount(id);
+      setAccounts((prev) => prev.filter((a) => a.id !== id));
+      setSelected((prev) => { const n = new Set(prev); n.delete(id); return n; });
+    } catch (err) {
+      toast.error('Erro ao remover: ' + err.message);
+    }
+  };
+
+  const handleStopChrome = async () => {
+    setStoppingChrome(true);
+    try {
+      await api.stopOpenChrome();
+      setChromeRunning(false);
+      toast.info('Solicitação para fechar os Chromes enviada');
+    } catch (err) {
+      toast.error('Erro ao fechar Chrome: ' + err.message);
+    } finally {
+      setStoppingChrome(false);
+    }
+  };
+
+  const sanitizeEmailForFileName = (email, fallback = 'conta') => {
+    const safe = (email || fallback)
+      .trim()
+      .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
+      .replace(/[. ]+$/g, '');
+    return safe || fallback;
+  };
+
+  const downloadTextFile = (content, fileName) => {
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const generateExportTxt = (account) => {
     let content = '==========================================================\n';
-    content += '  FARMING ADS — Contas Prontas para Google Ads\n';
+    content += '  FARMING ADS - Conta Pronta para Google Ads\n';
     content += `  Exportado em: ${new Date().toLocaleString('pt-BR')}\n`;
-    content += `  Total: ${accounts.length} conta(s)\n`;
+    content += `  Conta: ${account.email}\n`;
     content += '==========================================================\n\n';
 
-    for (const account of accounts) {
-      content += '──────────────────────────────────────────────────────────\n';
-      content += `Email:    ${account.email}\n`;
-      content += `Senha:    ${account.password}\n`;
-      content += `Proxy:    ${account.proxy || 'Nenhum'}\n`;
-      content += `API Key:  ${account.googleAdsApiKey || 'Não gerada'}\n`;
-      content += `Ads ID:   ${account.googleAdsAccountId || 'Não capturado'}\n`;
-      content += `Dias:     ${account.warmupDaysDone}/3\n`;
-      content += `Concluído: ${account.completedAt ? new Date(account.completedAt).toLocaleString('pt-BR') : '—'}\n`;
-      content += `Cookies:  ${account.cookiesAvailable ? account.cookies.length + ' cookies' : 'Não disponível'}\n`;
-      content += '──────────────────────────────────────────────────────────\n';
+    content += '----------------------------------------------------------\n';
+    content += `Email:    ${account.email}\n`;
+    content += `Senha:    ${account.password}\n`;
+    content += `Email de Recuperação: ${account.recoveryEmail || 'Não configurado'}\n`;
+    content += `Token 2FA (TOTP): ${account.totpSecret || 'Não configurado'}\n`;
+    content += `Proxy:    ${account.proxy || 'Nenhum'}\n`;
+    content += `API Key:  ${account.googleAdsApiKey || 'Não gerada'}\n`;
+    content += `Ads ID:   ${account.googleAdsAccountId || 'Não capturado'}\n`;
+    content += `Dias:     ${account.warmupDaysDone}/3\n`;
+    content += `Concluído: ${account.completedAt ? new Date(account.completedAt).toLocaleString('pt-BR') : '-'}\n`;
+    content += `Cookies:  ${account.cookiesAvailable ? account.cookies.length + ' cookies' : 'Não disponível'}\n`;
+    content += '----------------------------------------------------------\n';
 
-      if (account.cookies && account.cookies.length > 0) {
-        content += '\n# Netscape HTTP Cookie File\n';
-        for (const cookie of account.cookies) {
-          const httpOnly = cookie.httpOnly ? 'TRUE' : 'FALSE';
-          const secure = cookie.secure ? 'TRUE' : 'FALSE';
-          const expires = cookie.expires ? Math.floor(cookie.expires) : 0;
-          content += `${cookie.domain || '.google.com'}\t${httpOnly}\t${cookie.path || '/'}\t${secure}\t${expires}\t${cookie.name}\t${cookie.value}\n`;
-        }
+    if (account.cookies && account.cookies.length > 0) {
+      content += '\n# Netscape HTTP Cookie File\n';
+      for (const cookie of account.cookies) {
+        const httpOnly = cookie.httpOnly ? 'TRUE' : 'FALSE';
+        const secure = cookie.secure ? 'TRUE' : 'FALSE';
+        const expires = cookie.expires ? Math.floor(cookie.expires) : 0;
+        content += `${cookie.domain || '.google.com'}\t${httpOnly}\t${cookie.path || '/'}\t${secure}\t${expires}\t${cookie.name}\t${cookie.value}\n`;
       }
-      content += '\n\n';
     }
 
     return content;
@@ -170,6 +242,55 @@ export default function ReadyAccounts() {
             );
           })()}
 
+          {runningAds && (
+            <button
+              onClick={async () => {
+                try {
+                  await api.stopGoogleAds();
+                  toast.info('Parando Google Ads...');
+                  setRunningAds(false);
+                } catch (err) {
+                  toast.error('Erro: ' + err.message);
+                }
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              <Square className="w-4 h-4" />
+              Parar
+            </button>
+          )}
+
+          <button
+            onClick={handleOpenChrome}
+            disabled={openingChrome || chromeRunning || selected.size === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+          >
+            <Chrome className="w-4 h-4" />
+            {openingChrome ? 'Abrindo Chrome...' : `Abrir Chrome${selected.size > 0 ? ` (${selected.size})` : ''}`}
+          </button>
+
+          {chromeRunning && (
+            <button
+              onClick={handleStopChrome}
+              disabled={stoppingChrome}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              <Square className="w-4 h-4" />
+              {stoppingChrome ? 'Parando Chrome...' : 'Parar Chrome'}
+            </button>
+          )}
+
+          {selected.size > 0 && (
+            <button
+              onClick={handleDeleteSelected}
+              disabled={deletingSelected}
+              className="flex items-center gap-2 px-4 py-2 bg-red-700 hover:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+              {deletingSelected ? 'Removendo...' : `Excluir (${selected.size})`}
+            </button>
+          )}
+
           <button
             onClick={handleExport}
             disabled={exporting || accounts.length === 0}
@@ -212,6 +333,7 @@ export default function ReadyAccounts() {
             <div className="w-28 text-center">Ads ID</div>
             <div className="w-28 text-center">API Key</div>
             <div className="w-40 text-center">Concluído em</div>
+            <div className="w-10" />
           </div>
 
           {/* Linhas */}
@@ -284,6 +406,15 @@ export default function ReadyAccounts() {
                     : '—'}
                 </span>
               </div>
+
+              <div className="w-10 flex justify-end">
+                <button
+                  onClick={(e) => handleDelete(e, account.id)}
+                  className="p-1.5 rounded hover:bg-red-900/50 hover:text-red-300 text-gray-600 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -294,7 +425,7 @@ export default function ReadyAccounts() {
         <div className="bg-blue-950/30 border border-blue-800/40 rounded-lg p-4">
           <h3 className="text-sm font-medium text-blue-300 mb-2">ℹ️ Sobre a Exportação</h3>
           <ul className="text-xs text-blue-400/80 space-y-1 list-disc list-inside">
-            <li>Exporta 1 arquivo <strong>.txt</strong> com email, senha, proxy, API key e cookies</li>
+            <li>Exporta 1 arquivo <strong>.txt</strong> por conta, com nome do arquivo baseado no email</li>
             <li>Os cookies ficam salvos no perfil de cada conta em <code>data/profiles/</code></li>
             <li>Formato Netscape é compatível com extensões de importação de cookies</li>
             <li>Selecione contas específicas ou exporte todas de uma vez</li>

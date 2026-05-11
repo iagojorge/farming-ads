@@ -40,10 +40,15 @@ export function initScheduler() {
   setupPeriodSchedules(); // Novo: ativa os 12 períodos
   setupWarmupSchedule();
 
+  const initialAdjustments = checkExpiredWarmups();
+  if (initialAdjustments > 0) {
+    console.log(`[scheduler] ${initialAdjustments} conta(s) com status de aquecimento ajustado na inicialização.`);
+  }
+
   // Verifica aquecimentos expirados toda hora
   cron.schedule('0 * * * *', () => {
     const n = checkExpiredWarmups();
-    if (n > 0) console.log(`[scheduler] ${n} conta(s) marcada(s) como aquecida(s).`);
+    if (n > 0) console.log(`[scheduler] ${n} conta(s) com status de aquecimento ajustado.`);
   }, { timezone: 'America/Sao_Paulo' });
 
   // Limpa contas travadas em warming a cada 5 minutos (IMPORTANTE para evitar estado travado)
