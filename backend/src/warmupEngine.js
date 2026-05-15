@@ -75,6 +75,65 @@ function getRandomOrgName() {
   return ORG_NAMES[Math.floor(Math.random() * ORG_NAMES.length)];
 }
 
+// ── Stealth browser config ────────────────────────────────────
+
+const STEALTH_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
+function buildLaunchOpts(proxyForBrowser = null) {
+  const opts = {
+    headless: process.env.HEADLESS !== 'false',
+    userAgent: STEALTH_USER_AGENT,
+    viewport: { width: 1366, height: 768 },
+    locale: 'pt-BR',
+    timezoneId: 'America/Sao_Paulo',
+    args: [
+      '--disable-blink-features=AutomationControlled',
+      '--no-first-run',
+      '--disable-default-apps',
+      '--disable-infobars',
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--disable-accelerated-2d-canvas',
+      '--window-size=1366,768',
+      '--lang=pt-BR',
+      '--disable-notifications',
+    ],
+  };
+  if (proxyForBrowser) opts.proxy = proxyForBrowser;
+  return opts;
+}
+
+async function applyStealthScripts(context) {
+  await context.addInitScript(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+    Object.defineProperty(navigator, 'platform', { get: () => 'Win32' });
+    Object.defineProperty(navigator, 'plugins', {
+      get: () => [
+        { name: 'Chrome PDF Plugin', filename: 'internal-pdf-viewer', description: 'Portable Document Format' },
+        { name: 'Chrome PDF Viewer', filename: 'mhjfbmdgcfjbbpaeojofohoefgiehjai', description: '' },
+        { name: 'Native Client', filename: 'internal-nacl-plugin', description: '' },
+      ],
+    });
+    Object.defineProperty(navigator, 'languages', { get: () => ['pt-BR', 'pt', 'en-US', 'en'] });
+    if (!window.chrome) {
+      window.chrome = {
+        runtime: {},
+        loadTimes: function () {},
+        csi: function () {},
+        app: {},
+      };
+    }
+    // Sobrescreve toString de funções automação para parecer nativo
+    const originalQuery = window.navigator.permissions.query;
+    window.navigator.permissions.query = (parameters) =>
+      parameters.name === 'notifications'
+        ? Promise.resolve({ state: Notification.permission })
+        : originalQuery(parameters);
+  });
+}
+
 // ── Helpers ───────────────────────────────────────────────────
 
 async function sleep(ms) {
@@ -1394,36 +1453,7 @@ async function createGoogleAdsAccount(page, log, account = {}) {
       await sleep(randomDelay(2000, 4000));
     }
 
-    // Captura o ID da conta Google Ads (número tipo 123-456-7890)
-    try {
-      const adsUrl = page.url();
-      log(`📍 URL pós-ads: ${adsUrl}`);
-      
-      // Do URL (formato /aw/overview?ocid=XXXXXXXXXX ou customerId=...)
-      let urlIdMatch = adsUrl.match(/(?:ocid|customerId)=(\d+)/);
-      if (urlIdMatch) {
-        googleAdsAccountId = urlIdMatch[1];
-      }
-
-      // Do HTML — número formatado XXX-XXX-XXXX
-      if (!googleAdsAccountId) {
-        const htmlContent = await page.content();
-        const idMatch = htmlContent.match(/\b(\d{3}[-\s]?\d{3}[-\s]?\d{4})\b/);
-        if (idMatch) {
-          googleAdsAccountId = idMatch[1].replace(/[-\s]/g, '');
-        }
-      }
-
-      if (googleAdsAccountId) {
-        log(`✅ Google Ads Account ID: ${googleAdsAccountId}`);
-      } else {
-        log('⚠️ Não conseguiu capturar ID da conta Google Ads');
-      }
-    } catch (err) {
-      log(`⚠️ Erro ao capturar ID: ${err.message}`);
-    }
-
-    log('✅ [1/5] Concluída');
+    log('✅ [1/5] Concluída');  // ID da conta será capturado após configurar pagamento
   } catch (err) {
     log(`⚠️ Erro na Parte 1: ${err.message}`);
   }
@@ -1709,11 +1739,30 @@ async function createGoogleAdsAccount(page, log, account = {}) {
           ], 'USD', log, 10000);
           await sleep(randomDelay(2000, 3000));
           // Clica Continuar → leva para signup/payment
-          await clickFirst(page, [
+          const continuarOk = await clickFirst(page, [
             'xpath=//expert-wrapper/div/div/material-button[1]/material-ripple',
             'xpath=//expert-wrapper//material-button[1]/material-ripple',
             'xpath=//expert-wrapper//material-button/material-ripple',
+            'xpath=//expert-wrapper//material-button[1]',
+            'xpath=//expert-wrapper//material-button',
           ], 'Continuar', log, 10000);
+          if (!continuarOk) {
+            // Fallback: clica por texto "continuar" ou último botão visível da página
+            await page.evaluate(() => {
+              const btns = Array.from(document.querySelectorAll('material-button, button'))
+                .filter(b => b.offsetParent !== null);
+              const cont = btns.find(b => /continuar|continue|salvar|save/i.test(b.textContent || ''));
+              if (cont) { cont.click(); return; }
+              // fallback: último botão primário visível
+              const primary = btns.filter(b => {
+                const cls = b.className || '';
+                return /raised|primary|submit/i.test(cls);
+              });
+              if (primary.length) primary[primary.length - 1].click();
+              else if (btns.length) btns[btns.length - 1].click();
+            });
+            log('  ⚠️ Continuar via fallback evaluate');
+          }
           await sleep(randomDelay(5000, 8000));
         }
         else {
@@ -2296,6 +2345,22 @@ async function createGoogleAdsAccount(page, log, account = {}) {
       }
     } catch (e) { log(`  ⚠️ Erro ao clicar "Enviar": ${e.message}`); }
 
+    // ── Captura o ID da conta Google Ads após clicar em Enviar ──
+    await sleep(randomDelay(1500, 2500));
+    try {
+      const adsUrl = page.url();
+      log(`📍 URL pós-enviar: ${adsUrl}`);
+      let urlIdMatch = adsUrl.match(/(?:ocid|customerId)=(\d+)/);
+      if (urlIdMatch) googleAdsAccountId = urlIdMatch[1];
+      if (!googleAdsAccountId) {
+        const htmlContent = await page.content();
+        const idMatch = htmlContent.match(/\b(\d{3}[-\s]?\d{3}[-\s]?\d{4})\b/);
+        if (idMatch) googleAdsAccountId = idMatch[1].replace(/[-\s]/g, '');
+      }
+      if (googleAdsAccountId) log(`✅ Google Ads Account ID: ${googleAdsAccountId}`);
+      else log('⚠️ ID da conta não encontrado — será null');
+    } catch (err) { log(`⚠️ Erro ao capturar ID: ${err.message}`); }
+
     // ── PASSO 6: Aguardar tela "Sua conta foi criada" e clicar em Continuar ──
     log('  ⏳ Aguardando tela "Sua conta foi criada"...');
     try {
@@ -2740,17 +2805,7 @@ export async function runWarmupSession(account, log = console.log, dayNumber = 1
     log('⚠️ Nenhum proxy configurado - usando conexão direta');
   }
 
-  const launchOpts = {
-    headless: process.env.HEADLESS === 'true',
-    args: [
-      '--disable-blink-features=AutomationControlled',
-      '--no-first-run',
-      '--disable-default-apps',
-    ],
-  };
-  if (proxyForBrowser) {
-    launchOpts.proxy = proxyForBrowser;
-  }
+  const launchOpts = buildLaunchOpts(proxyForBrowser);
 
   let context = null;
   let timedOut = false;
@@ -2759,6 +2814,7 @@ export async function runWarmupSession(account, log = console.log, dayNumber = 1
   try {
     log(`Iniciando browser para ${account.email}`);
     context = await chromium.launchPersistentContext(profilePath, launchOpts);
+    await applyStealthScripts(context);
     await sleep(TIMINGS.browserStartupWait);
 
     // Timeout interno: força o fechamento do browser para evitar travamento
@@ -2898,21 +2954,14 @@ export async function openChromeForTesting(account, log = console.log) {
     }
   }
 
-  const launchOpts = {
-    headless: process.env.HEADLESS === 'true',
-    args: [
-      '--disable-blink-features=AutomationControlled',
-      '--no-first-run',
-      '--disable-default-apps',
-    ],
-  };
-  if (proxyForBrowser) launchOpts.proxy = proxyForBrowser;
+  const launchOpts = buildLaunchOpts(proxyForBrowser);
 
   let context = null;
 
   try {
     log(`Abrindo Chrome para ${account.email} (sem timeout para testes)...`);
     context = await chromium.launchPersistentContext(profilePath, launchOpts);
+    await applyStealthScripts(context);
     context.once('close', () => {
       closeProxyTunnel().catch(() => {});
     });
@@ -2995,15 +3044,7 @@ export async function runGoogleAdsOnly(account, log = console.log, timeoutMs = T
     }
   }
 
-  const launchOpts = {
-    headless: process.env.HEADLESS === 'true',
-    args: [
-      '--disable-blink-features=AutomationControlled',
-      '--no-first-run',
-      '--disable-default-apps',
-    ],
-  };
-  if (proxyForBrowser) launchOpts.proxy = proxyForBrowser;
+  const launchOpts = buildLaunchOpts(proxyForBrowser);
 
   let context = null;
   let timedOut = false;
@@ -3012,6 +3053,7 @@ export async function runGoogleAdsOnly(account, log = console.log, timeoutMs = T
   try {
     log(`Iniciando browser para ${account.email} (Google Ads only)...`);
     context = await chromium.launchPersistentContext(profilePath, launchOpts);
+    await applyStealthScripts(context);
     await sleep(TIMINGS.browserStartupWait);
 
     // Timeout interno: força o fechamento do browser
