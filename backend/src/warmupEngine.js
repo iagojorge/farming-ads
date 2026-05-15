@@ -17,22 +17,26 @@ import { TIMINGS, YOUTUBE_SEARCH_TERMS, randomDelay, randomItem } from './warmup
 import { createSocksProxyTunnel } from './socksProxy.js';
 import { generateTOTP } from './totp.js';
 import { broadcast } from './events.js';
+import { updateAccount } from './store.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROFILES_DIR = join(__dirname, '../../data/profiles');
 const CARDS_PATH = join(__dirname, '../data/cards.json');
-const CNPJS_PATH = join(__dirname, '../data/cnpjs.json');
-
 // Garante diretório de perfis
 if (!existsSync(PROFILES_DIR)) mkdirSync(PROFILES_DIR, { recursive: true });
 
-/** Retorna um cartão aleatório com status Ativado do cards.json */
+let _lastCardNum = null; // evita repetir o último cartão sorteado
+
+/** Retorna um cartão aleatório com status Ativado, sem repetir o último */
 function getNextCard() {
   if (!existsSync(CARDS_PATH)) return null;
   const cards = JSON.parse(readFileSync(CARDS_PATH, 'utf-8'));
-  const available = cards.filter(c => c.status === 'Ativado');
+  let available = cards.filter(c => c.status === 'Ativado' && c.numero_cartao !== _lastCardNum);
+  if (!available.length) available = cards.filter(c => c.status === 'Ativado'); // fallback: ignora filtro
   if (!available.length) return null;
-  return available[Math.floor(Math.random() * available.length)];
+  const card = available[Math.floor(Math.random() * available.length)];
+  _lastCardNum = card.numero_cartao;
+  return card;
 }
 
 /** Marca um cartão como usado no cards.json */
@@ -46,22 +50,29 @@ function markCardUsed(numeroCartao) {
   }
 }
 
-/** Lê o próximo CNPJ disponível (não usado) do cnpjs.json */
-function getNextCnpj() {
-  if (!existsSync(CNPJS_PATH)) return null;
-  const list = JSON.parse(readFileSync(CNPJS_PATH, 'utf-8'));
-  return list.find(c => !c.usado) || null;
+/** Lista de ZIP codes americanos para preencher o campo CEP */
+const US_ZIP_CODES = [
+  '10001', '90001', '60601', '77001', '85001',
+  '19101', '78201', '92101', '75201', '95101',
+  '30301', '98101', '02101', '80201', '33101',
+  '28201', '37201', '48201', '55401', '63101',
+];
+
+/** Lista de nomes de organização para preencher o formulário */
+const ORG_NAMES = [
+  'Ultrafarme Digital', 'Marketing Pro Solutions', 'Global Media Services',
+  'Digital Growth Corp', 'Ads Marketing Brazil', 'ProMedia Group',
+  'Digital Ventures LLC', 'Media Solutions Co', 'Growth Marketing Inc',
+  'Digital Ads Agency', 'WebMedia Solutions', 'OnlineMedia Corp',
+  'BrightAds Network', 'ClickBoost Media', 'PrimeAds Solutions',
+];
+
+function getRandomZip() {
+  return US_ZIP_CODES[Math.floor(Math.random() * US_ZIP_CODES.length)];
 }
 
-/** Marca um CNPJ como usado no cnpjs.json */
-function markCnpjUsed(cnpj) {
-  if (!existsSync(CNPJS_PATH)) return;
-  const list = JSON.parse(readFileSync(CNPJS_PATH, 'utf-8'));
-  const entry = list.find(c => c.cnpj === cnpj);
-  if (entry) {
-    entry.usado = true;
-    writeFileSync(CNPJS_PATH, JSON.stringify(list, null, 2));
-  }
+function getRandomOrgName() {
+  return ORG_NAMES[Math.floor(Math.random() * ORG_NAMES.length)];
 }
 
 // ── Helpers ───────────────────────────────────────────────────
@@ -1067,14 +1078,29 @@ async function browseGmail(page, log) {
 // ── Trocar idioma da conta Google para Português do Brasil ──
 
 async function changeLanguageToPortuguese(page, log) {
-  log('🌎 Trocando idioma da conta para Português do Brasil...');
+  log('🌎 Verificando idioma da conta...');
   try {
-    // 1. Vai direto para a página de idioma (URL direta, mais confiável que navegar por menus)
+    // 1. Vai direto para a página de idioma
     await page.goto('https://myaccount.google.com/language', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await sleep(randomDelay(3000, 5000));
-    
+
     const currentUrl = page.url();
     log(`  📍 URL: ${currentUrl}`);
+
+    // 2. Verifica se já está em português — lê o texto da página
+    if (currentUrl.includes('myaccount.google.com')) {
+      const pageText = await page.evaluate(() => document.body?.innerText || '').catch(() => '');
+      const alreadyPortuguese =
+        /\bidioma\b/i.test(pageText) ||          // título "Idioma" em PT
+        /português.*brasil/i.test(pageText) ||   // idioma atual exibido
+        /pt-br/i.test(pageText);                  // código de idioma visível
+
+      if (alreadyPortuguese) {
+        log('✓ Idioma já está em português — pulando alteração');
+        return;
+      }
+      log('  ⚠️ Idioma não está em português, iniciando alteração...');
+    }
 
     // Se redirecionou para login ou outra página, tenta o caminho completo
     if (!currentUrl.includes('myaccount.google.com')) {
@@ -1173,7 +1199,7 @@ async function changeLanguageToPortuguese(page, log) {
 
     // 5. Modal de região — seleciona "Brasil"
     log('  → Selecionando Brasil na modal de região...');
-    await clickFirst(page, [
+    const brasilClicked = await clickFirst(page, [
       '[role="option"]:has-text("Brasil")',
       '[role="option"]:has-text("Brazil")',
       'li:has-text("Brasil")',
@@ -1181,37 +1207,68 @@ async function changeLanguageToPortuguese(page, log) {
       ':text("Brasil")',
       ':text("Brazil")',
     ], 'Brasil', log, 15000);
-    await sleep(randomDelay(3000, 4000));
-
-    // 6. Clica no botão "Salvar" (tenta vários seletores pois div[N] é dinâmico)
-    log('  → Clicando no botão Salvar...');
-    await sleep(1000);
     
-    // Estratégia: busca TODOS os botões visíveis com texto "Salvar" ou "Save"
-    let saved = await clickFirst(page, [
-      'xpath=//*[@id="yDmH0d"]/div[17]/div[2]/div/div[2]/div[3]/button/span[3]',
-      'xpath=//*[@id="yDmH0d"]/div[18]/div[2]/div/div[2]/div[3]/button/span[3]',
-      'xpath=//*[@id="yDmH0d"]/div[17]/div[2]/div/div[2]/div[1]/button/span[3]',
-      'xpath=//*[@id="yDmH0d"]/div[18]/div[2]/div/div[2]/div[1]/button/span[3]',
-      // Seletores semânticos como fallback
-      'button:has-text("Salvar")',
-      'button:has-text("Save")',
-      '[role="button"]:has-text("Salvar")',
-      '[role="button"]:has-text("Save")',
-    ], 'Salvar', log, 15000);
-    await sleep(randomDelay(2000, 3000));
+    if (brasilClicked) {
+      log('  ✓ Brasil selecionado — aguardando modal fechar...');
+      // Aguarda a opção ser aplicada (modal fecha ou estado muda)
+      await sleep(randomDelay(3000, 5000));
+      // Garante que o DOM está estável antes de procurar o botão Salvar
+      try { await page.waitForLoadState('networkidle', { timeout: 5000 }); } catch {}
+      await sleep(1000);
+    } else {
+      log('  ⚠️ Brasil não foi selecionado — tentando salvar mesmo assim');
+      await sleep(randomDelay(2000, 3000));
+    }
+
+    // 6. Clica no botão "Salvar" — usa o último botão da modal (mais confiável)
+    log('  → Clicando no botão Salvar...');
+
+    // Estratégia primária: último botão visível no modal de idioma (conforme XPath informado)
+    let saved = await page.evaluate(() => {
+      // Pega todos os botões visíveis
+      const allBtns = Array.from(document.querySelectorAll('button'));
+      const visible = allBtns.filter(b => {
+        const r = b.getBoundingClientRect();
+        return r.width > 0 && r.height > 0 && b.offsetParent !== null;
+      });
+      // O botão Salvar é o último botão visível
+      const last = visible[visible.length - 1];
+      if (last) { last.click(); return last.textContent?.trim() || 'último botão'; }
+      return null;
+    });
+
+    if (saved) {
+      log(`  ✓ Clicou no último botão: "${saved}"`);
+    } else {
+      // Fallback: XPath exato fornecido + variantes de div[N]
+      saved = await clickFirst(page, [
+        'xpath=//*[@id="yDmH0d"]/div[16]/div[2]/div/div[2]/div[3]/button/span[3]',
+        'xpath=//*[@id="yDmH0d"]/div[17]/div[2]/div/div[2]/div[3]/button/span[3]',
+        'xpath=//*[@id="yDmH0d"]/div[15]/div[2]/div/div[2]/div[3]/button/span[3]',
+        'xpath=//*[@id="yDmH0d"]/div[18]/div[2]/div/div[2]/div[3]/button/span[3]',
+        'button:has-text("Salvar")',
+        'button:has-text("Save")',
+        '[role="button"]:has-text("Salvar")',
+        '[role="button"]:has-text("Save")',
+      ], 'Salvar', log, 10000);
+    }
+    await sleep(randomDelay(3000, 4000));
 
     // 7. Segundo botão de salvar (confirmação final, se existir)
     log('  → Verificando se há segundo botão Salvar...');
-    const saved2 = await clickFirst(page, [
-      'xpath=//*[@id="yDmH0d"]/div[18]/div[2]/div/div[2]/div[1]/button/span[3]',
-      'xpath=//*[@id="yDmH0d"]/div[17]/div[2]/div/div[2]/div[1]/button/span[3]',
-      'xpath=//*[@id="yDmH0d"]/div[19]/div[2]/div/div[2]/div[1]/button/span[3]',
-      'button:has-text("Salvar")',
-      'button:has-text("Save")',
-    ], 'Salvar final', log, 8000);
+    const saved2 = await page.evaluate(() => {
+      const allBtns = Array.from(document.querySelectorAll('button'));
+      const visible = allBtns.filter(b => {
+        const r = b.getBoundingClientRect();
+        return r.width > 0 && r.height > 0 && b.offsetParent !== null;
+      });
+      const last = visible[visible.length - 1];
+      if (last) { last.click(); return last.textContent?.trim() || 'último botão'; }
+      return null;
+    });
     
     if (saved2) {
+      log(`  ✓ Segundo Salvar: "${saved2}"`);
       await sleep(randomDelay(3000, 5000));
     }
 
@@ -1766,43 +1823,6 @@ async function createGoogleAdsAccount(page, log, account = {}) {
         throw new Error('Iframe de pagamento não encontrado — fluxo não está na tela correta');
       }
 
-      // Helper: busca #c5 em TODOS os frames da página (inclui iframes aninhados)
-      // O modal "Confirme sua identidade" pode abrir como iframe filho do payments iframe
-      async function findC5AnyFrame(timeoutMs = 5000) {
-        const deadline = Date.now() + timeoutMs;
-        while (Date.now() < deadline) {
-          for (const f of page.frames()) {
-            try {
-              const el = await f.$('#c5');
-              if (el) {
-                log(`  🔍 #c5 encontrado no frame: ${f.url().substring(0, 80)}`);
-                return { cnpjFrame: f, el };
-              }
-            } catch { /* próximo frame */ }
-          }
-          await sleep(300);
-        }
-        return null;
-      }
-
-      // Verifica se CNPJ já existe no iframe (pula criação se já preenchido)
-      let cnpjAlreadyExists = false;
-      let cnpjToUse = null;
-      let cnpjEntry = null;
-      try {
-        cnpjAlreadyExists = await frame.evaluate(() => {
-          // Texto do CNPJ fica dentro de fieldset e suas divs/spans filhos
-          const fieldsets = Array.from(document.querySelectorAll('fieldset'));
-          if (fieldsets.some(fs => /\d{2}\.\d{3}\.\d{3}/.test(fs.textContent || ''))) return true;
-          // Fallback: qualquer div/span direta do iframe com padrão de CNPJ
-          const direct = Array.from(document.querySelectorAll(':scope > div div, :scope > div span'));
-          return direct.some(el => /\d{2}\.\d{3}\.\d{3}/.test(el.textContent || ''));
-        });
-        if (cnpjAlreadyExists) log('  ℹ️ CNPJ já preenchido no iframe (fieldset) — pulando criação de perfil');
-      } catch (e) {
-        log(`  ⚠️ Erro ao verificar CNPJ existente: ${e.message}`);
-      }
-
       // Helper genérico: busca um seletor CSS em todos os frames e clica
       async function clickInAnyFrame(cssSelector, timeoutMs = 8000) {
         const deadline = Date.now() + timeoutMs;
@@ -1822,495 +1842,562 @@ async function createGoogleAdsAccount(page, log, account = {}) {
         return false;
       }
 
-      if (!cnpjAlreadyExists) {
-      // ── PASSO 1: Clicar em "Criar novo perfil para pagamentos" ──
-      // Após o clique, o modal pode abrir como iframe filho — buscamos #c5 em todos os frames.
-      log('  → Procurando botão "Criar novo perfil" (id-24 down to id-1)...');
-      let profileBtnClicked = false;
-      let cnpjFrame = frame; // será atualizado para o frame onde #c5 for encontrado
-
-      // Verifica se o modal já está aberto (#c5 em qualquer frame)
-      const alreadyOpenResult = await findC5AnyFrame(3000);
-      if (alreadyOpenResult) {
-        log('  ✅ Modal já estava aberto (#c5 detectado)');
-        cnpjFrame = alreadyOpenResult.cnpjFrame;
-        profileBtnClicked = true;
+      // ── PASSO 1: Criar perfil de pagamento ──
+      // Dupla validação: flag na conta OU nome da org visível no iframe
+      let profileAlreadyExists = !!account.paymentProfileCreated;
+      if (!profileAlreadyExists) {
+        try {
+          const iframeText = await frame.evaluate(() => document.body?.innerText || '').catch(() => '');
+          if (ORG_NAMES.some(name => iframeText.includes(name))) {
+            log('  ℹ️ Nome da organização detectado no iframe — perfil já existe');
+            profileAlreadyExists = true;
+          }
+        } catch { }
       }
 
-      if (!profileBtnClicked) {
-        for (let idNum = 24; idNum >= 1; idNum--) {
-          const sel = `#id-${idNum}`;
-          const exists = await frame.$(sel);
-          if (!exists) continue;
-
-          // dispatchEvent para não bloquear se outro overlay estiver na frente
-          await frame.evaluate((selector) => {
-            const el = document.querySelector(selector);
-            if (el) el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-          }, sel);
-
-          // Busca #c5 em TODOS os frames (não só em frame)
-          const openedResult = await findC5AnyFrame(5000);
-          if (openedResult) {
-            log(`  ✅ Modal aberto! Botão correto era ${sel}`);
-            cnpjFrame = openedResult.cnpjFrame;
-            profileBtnClicked = true;
-            break;
+      /** Busca em todos os frames por inputs c{N} visíveis — retorna { formFrame, minId, maxId } */
+      async function findFormFrame(timeoutMs = 10000) {
+        const deadline = Date.now() + timeoutMs;
+        while (Date.now() < deadline) {
+          for (const f of page.frames()) {
+            try {
+              const result = await f.evaluate(() => {
+                const inputs = Array.from(document.querySelectorAll('input[id]'))
+                  .filter(i => /^c\d+$/.test(i.id) && i.offsetParent !== null);
+                if (inputs.length < 1) return null;
+                const nums = inputs.map(i => parseInt(i.id.slice(1), 10)).sort((a, b) => a - b);
+                return { minId: nums[0], maxId: nums[nums.length - 1], count: nums.length };
+              });
+              if (result) {
+                log(`  🔍 Frame encontrado: ${f.url().substring(0, 80)} (inputs c${result.minId}…c${result.maxId})`);
+                return { formFrame: f, ...result };
+              }
+            } catch { }
           }
           await sleep(300);
         }
+        return null;
       }
 
-      // Fallback final
-      if (!profileBtnClicked) {
-        log('  ⚠️ Loop terminou sem detectar #c5 — aguardando mais 5s...');
-        const lateResult = await findC5AnyFrame(5000);
-        if (lateResult) {
-          log('  ✅ Modal detectado no fallback (#c5 apareceu)');
-          cnpjFrame = lateResult.cnpjFrame;
-          profileBtnClicked = true;
-        } else {
-          log('  ❌ Não conseguiu abrir o modal de criar perfil');
-        }
-      }
-      await sleep(randomDelay(500, 1000));
-
-      // ── PASSO 2: Preencher CNPJ no modal ──
-      // Usa cnpjFrame (o frame correto onde #c5 está) via evaluate
-      log('  📋 Preenchendo CNPJ no modal...');
-      cnpjToUse = account.cnpj && account.cnpj.replace(/\D/g, '');
-      if (!cnpjToUse) {
-        cnpjEntry = getNextCnpj();
-        cnpjToUse = cnpjEntry ? cnpjEntry.cnpj : null;
-        if (!cnpjToUse) log('  ❌ Nenhum CNPJ disponível em cnpjs.json');
+      /** Preenche input pelo ID no frame específico */
+      async function fillInputById(f, id, value) {
+        return f.evaluate(({ id, value }) => {
+          const el = document.getElementById(id);
+          if (!el) return false;
+          el.focus();
+          el.value = '';
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          el.value = value;
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+          return true;
+        }, { id, value });
       }
 
-      if (cnpjToUse && profileBtnClicked) {
-        try {
-          // Preenche via evaluate no frame correto
-          const filled = await cnpjFrame.evaluate((cnpj) => {
-            const el = document.querySelector('#c5');
-            if (!el) return false;
-            el.focus();
-            el.value = '';
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-            el.value = cnpj;
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-            el.dispatchEvent(new Event('change', { bubbles: true }));
-            return true;
-          }, cnpjToUse);
+      if (profileAlreadyExists) {
+        log('  ℹ️ Perfil de pagamento já criado — pulando para forma de pagamento');
+      } else {
+        log('  → Procurando botão "Criar novo perfil para pagamentos"...');
+        let profileBtnClicked = false;
 
-          if (filled) {
-            log(`  ✅ CNPJ preenchido: ${cnpjToUse}`);
-            // markCnpjUsed será chamado APÓS o cartão ser confirmado com sucesso
-            await sleep(randomDelay(1000, 2000));
-
-            // Confirmar modal CNPJ — botão primário no cnpjFrame
-            log('  → Confirmando modal CNPJ...');
-            const confirmed = await cnpjFrame.evaluate(() => {
-              const btns = Array.from(document.querySelectorAll('button'))
+        // 1) Por texto em todos os frames
+        for (const f of page.frames()) {
+          try {
+            const clicked = await f.evaluate(() => {
+              const btns = Array.from(document.querySelectorAll('button, [role="button"], a'))
                 .filter(b => b.offsetParent !== null);
               for (const btn of btns) {
-                const txt = (btn.textContent || '').trim().toLowerCase();
-                if (/continuar|próxima|próximo|salvar|confirmar|next|save|confirm/i.test(txt)) {
-                  btn.click(); return btn.textContent.trim();
+                if (/criar.*perfil.*pagamentos|create.*payment.*profile/i.test(btn.textContent || '')) {
+                  btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+                  return (btn.textContent || '').trim();
                 }
+              }
+              return null;
+            });
+            if (clicked) {
+              log(`  ✅ "Criar novo perfil" clicado: "${clicked}"`);
+              profileBtnClicked = true;
+              break;
+            }
+          } catch { }
+        }
+
+        // 2) Fallback: loop id-1..30
+        if (!profileBtnClicked) {
+          log('  ⚠️ Botão por texto não encontrado — tentando id-1..30...');
+          for (let idNum = 1; idNum <= 30 && !profileBtnClicked; idNum++) {
+            const sel = `#id-${idNum}`;
+            const exists = await frame.$(sel).catch(() => null);
+            if (!exists) continue;
+            await frame.evaluate((selector) => {
+              const el = document.querySelector(selector);
+              if (el) el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+            }, sel);
+            await sleep(randomDelay(800, 1200));
+            const formAppeared = await frame.evaluate(() =>
+              Array.from(document.querySelectorAll('input')).filter(i => i.offsetParent !== null).length >= 2
+            ).catch(() => false);
+            if (formAppeared) {
+              log(`  ✅ Formulário apareceu após clicar ${sel}`);
+              profileBtnClicked = true;
+            }
+          }
+          if (!profileBtnClicked) log('  ⚠️ "Criar novo perfil" não encontrado — tentando preencher mesmo assim');
+        }
+        await sleep(randomDelay(1500, 2500));
+
+        // Preenche org name + CEP
+        const orgName = getRandomOrgName();
+        const zipCode = getRandomZip();
+        const formResult = await findFormFrame(10000);
+
+        if (formResult) {
+          const { formFrame, minId, maxId } = formResult;
+
+          log(`  📋 Preenchendo Nome da organização (#c${minId}): "${orgName}"...`);
+          try {
+            const ok = await fillInputById(formFrame, `c${minId}`, orgName);
+            log(ok ? '  ✅ Nome da organização preenchido' : `  ⚠️ #c${minId} não encontrado`);
+            await sleep(randomDelay(600, 1200));
+          } catch (e) { log(`  ⚠️ Erro nome organização: ${e.message}`); }
+
+          log(`  📮 Preenchendo CEP (#c${maxId}): "${zipCode}"...`);
+          try {
+            const ok = await fillInputById(formFrame, `c${maxId}`, zipCode);
+            log(ok ? '  ✅ CEP preenchido' : `  ⚠️ #c${maxId} não encontrado`);
+            await sleep(randomDelay(600, 1200));
+          } catch (e) { log(`  ⚠️ Erro CEP: ${e.message}`); }
+
+          // Clica "Criar" no frame do formulário
+          log('  → Clicando "Criar"...');
+          try {
+            const clicked = await formFrame.evaluate(() => {
+              const btns = Array.from(document.querySelectorAll('button')).filter(b => b.offsetParent !== null);
+              for (const btn of btns) {
+                if (/^criar$|^create$/i.test((btn.textContent || '').trim())) { btn.click(); return btn.textContent.trim(); }
               }
               if (btns.length) { btns[btns.length - 1].click(); return 'último botão'; }
               return null;
             });
-            if (confirmed) log(`  ✅ Modal CNPJ confirmado (clicou: "${confirmed}")`);
-            else log('  ⚠️ Nenhum botão encontrado para confirmar modal CNPJ');
-            await sleep(randomDelay(3000, 5000));
-          } else {
-            log('  ⚠️ Campo CNPJ (#c5) não encontrado no modal (evaluate retornou false)');
-          }
-        } catch (e) {
-          log(`  ⚠️ Erro ao preencher CNPJ: ${e.message}`);
-        }
-      }
-
-      // ── PASSO 2.5: Preencher nome do perfil (#c27) e clicar em Criar (#id-168) ──
-      // Após confirmar o CNPJ, abre nova tela com campo de nome e botão Criar
-      const PROFILE_NAME = 'ultrafarme';
-
-      // 2.5a: Preencher campo nome (#c27) em qualquer frame
-      log('  → Preenchendo nome do perfil (#c27)...');
-      try {
-        let nameFilled = false;
-        const deadlineName = Date.now() + 8000;
-        while (Date.now() < deadlineName && !nameFilled) {
-          for (const f of page.frames()) {
-            try {
-              const filled = await f.evaluate((name) => {
-                const el = document.querySelector('#c27');
-                if (!el) return false;
-                el.focus();
-                el.value = '';
-                el.dispatchEvent(new Event('input', { bubbles: true }));
-                el.value = name;
-                el.dispatchEvent(new Event('input', { bubbles: true }));
-                el.dispatchEvent(new Event('change', { bubbles: true }));
-                return true;
-              }, PROFILE_NAME);
-              if (filled) { nameFilled = true; break; }
-            } catch { /* próximo frame */ }
-          }
-          if (!nameFilled) await sleep(400);
-        }
-        if (nameFilled) {
-          log(`  ✅ Nome do perfil preenchido: ${PROFILE_NAME}`);
+            if (clicked) log(`  ✅ "Criar" clicado: "${clicked}"`);
+            else log('  ⚠️ Botão "Criar" não encontrado');
+          } catch (e) { log(`  ⚠️ Erro ao clicar Criar: ${e.message}`); }
         } else {
-          log('  ⚠️ Campo #c27 não encontrado — continuando sem preencher nome');
-        }
-        await sleep(randomDelay(800, 1500));
-      } catch (e) {
-        log(`  ⚠️ Erro ao preencher nome (#c27): ${e.message}`);
-      }
-
-      // 2.5b: Clicar em Criar (#id-168 button) em qualquer frame
-      log('  → Clicando Criar perfil (#id-168)...');
-      try {
-        const createBtnClicked = await clickInAnyFrame('#id-168 span div button') ||
-                                  await clickInAnyFrame('#id-168 button');
-        if (createBtnClicked) {
-          log('  ✅ Botão Criar (#id-168) clicado');
-        } else {
-          log('  ⚠️ #id-168 não encontrado — tentando fallback por texto...');
-          await clickFirst(frame, [
-            '#id-168 button',
-            'button:has-text("Criar")',
-            'button:has-text("Create")',
-          ], 'Criar perfil', log, 5000);
-        }
-        await sleep(randomDelay(3000, 5000));
-      } catch (e) {
-        log(`  ⚠️ Erro ao clicar Criar (#id-168): ${e.message}`);
-      }
-      } // fim if (!cnpjAlreadyExists)
-
-      let cardSavedInNewModal = false;
-
-      // ── PASSO 2.7: Clicar no campo abaixo do CNPJ (id-30 a id-100) ──
-      // Após criar perfil (ou se já existia), aparece botão/campo abaixo do CNPJ para adicionar cartão.
-      log('  → Clicando campo abaixo do CNPJ (id-30 a id-100)...');
-      let cardSectionClicked = false;
-      try {
-        await sleep(randomDelay(2000, 3000));
-        for (let idNum = 30; idNum <= 100; idNum++) {
-          const sel27 = `#id-${idNum}`;
-          const visible27 = await frame.evaluate((s) => {
-            const el = document.querySelector(s);
-            return el && el.offsetParent !== null;
-          }, sel27).catch(() => false);
-          if (!visible27) continue;
-          await frame.evaluate((s) => {
-            const el = document.querySelector(s);
-            if (el) el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-          }, sel27);
-          log(`  ✅ Campo abaixo do CNPJ clicado: ${sel27}`);
-          cardSectionClicked = true;
-          break;
-        }
-        if (!cardSectionClicked) {
-          log('  ⚠️ Nenhum id-30~100 encontrado — tentando segunda div do iframe...');
-          const fbClicked = await frame.evaluate(() => {
-            const divs = Array.from(document.querySelectorAll(':scope > div'));
-            const second = divs[1];
-            if (second) { second.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })); return true; }
-            return false;
-          }).catch(() => false);
-          if (fbClicked) { log('  ✅ Segunda div do iframe clicada (fallback)'); cardSectionClicked = true; }
-          else log('  ⚠️ Fallback segunda div não encontrado');
-        }
-        await sleep(randomDelay(2000, 3000));
-      } catch (e) {
-        log(`  ⚠️ Erro ao clicar campo abaixo do CNPJ: ${e.message}`);
-      }
-
-      // ── PASSO 2.8: Selecionar primeira opção no modal (4 opções — primeiro = cartão) ──
-      log('  → Selecionando primeira opção (cartão) no modal...');
-      try {
-        let firstOptClicked = false;
-        const deadlineOpts28 = Date.now() + 8000;
-        while (Date.now() < deadlineOpts28 && !firstOptClicked) {
+          log('  ⚠️ Frame do formulário não encontrado — tentando clicar "Criar" em qualquer frame...');
           for (const f of page.frames()) {
             try {
               const clicked = await f.evaluate(() => {
-                const candidates = Array.from(document.querySelectorAll(
-                  'li, [role="option"], [role="radio"], input[type="radio"], material-radio-button'
-                )).filter(el => el.offsetParent !== null);
-                if (candidates.length > 0) {
-                  candidates[0].dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-                  return true;
-                }
-                return false;
+                const btns = Array.from(document.querySelectorAll('button')).filter(b => b.offsetParent !== null);
+                if (btns.length) { btns[btns.length - 1].click(); return 'último botão'; }
+                return null;
               });
-              if (clicked) { firstOptClicked = true; break; }
+              if (clicked) { log('  ✅ Fallback "Criar" clicado'); break; }
             } catch { }
           }
-          if (!firstOptClicked) await sleep(400);
-        }
-        log(firstOptClicked ? '  ✅ Primeira opção selecionada' : '  ⚠️ Nenhuma opção encontrada no modal');
-        await sleep(randomDelay(2000, 3000));
-      } catch (e) {
-        log(`  ⚠️ Erro ao selecionar primeira opção: ${e.message}`);
-      }
-
-      // ── PASSO 2.9: Preencher dados do cartão no modal (#c1, #c6, #c11, #c16) ──
-      log('  💳 Preenchendo cartão no modal (PASSO 2.9)...');
-      try {
-        const cardNum29 = card.numero_cartao.replace(/\s/g, '');
-        const [cardMo29, cardYr29] = card.validade.split('/');
-        const cardCvc29 = card.cvc;
-        const cardHolder29 = card.nome_titular || 'ULTRAFARME';
-
-        const fillInAnyFrame = async (fieldId, value) => {
-          const dl29 = Date.now() + 8000;
-          while (Date.now() < dl29) {
-            for (const f of page.frames()) {
-              try {
-                const filled = await f.evaluate(({ id, val }) => {
-                  const el = document.querySelector(`#${id}`);
-                  if (!el) return false;
-                  el.focus();
-                  el.value = '';
-                  el.dispatchEvent(new Event('input', { bubbles: true }));
-                  el.value = val;
-                  el.dispatchEvent(new Event('input', { bubbles: true }));
-                  el.dispatchEvent(new Event('change', { bubbles: true }));
-                  return true;
-                }, { id: fieldId, val: value });
-                if (filled) return true;
-              } catch { }
-            }
-            await sleep(400);
-          }
-          return false;
-        };
-
-        const ok1 = await fillInAnyFrame('c1', cardNum29);
-        log(ok1 ? '  ✅ #c1 (número) preenchido' : '  ⚠️ #c1 não encontrado');
-        await sleep(randomDelay(600, 1200));
-
-        const ok6 = await fillInAnyFrame('c6', `${cardMo29}/${cardYr29}`);
-        log(ok6 ? '  ✅ #c6 (validade) preenchido' : '  ⚠️ #c6 não encontrado');
-        await sleep(randomDelay(600, 1200));
-
-        const ok11 = await fillInAnyFrame('c11', cardCvc29);
-        log(ok11 ? '  ✅ #c11 (CVC) preenchido' : '  ⚠️ #c11 não encontrado');
-        await sleep(randomDelay(600, 1200));
-
-        const ok16 = await fillInAnyFrame('c16', cardHolder29);
-        log(ok16 ? '  ✅ #c16 (titular) preenchido' : '  ⚠️ #c16 não encontrado');
-        await sleep(randomDelay(1000, 2000));
-
-        log('  → Clicando Salvar cartão (#id-1925)...');
-        const savedCard29 = await clickInAnyFrame('#id-1925 span div button') ||
-                            await clickInAnyFrame('#id-1925 button') ||
-                            await clickInAnyFrame('#id-1925');
-        if (savedCard29) {
-          cardSavedInNewModal = true;
-          log('  ✅ Cartão salvo! (PASSO 2.9)');
-          if (cnpjEntry) { markCnpjUsed(cnpjToUse); log(`  ✅ CNPJ ${cnpjToUse} marcado como usado`); }
-        } else {
-          log('  ⚠️ Botão salvar cartão (#id-1925) não encontrado');
         }
         await sleep(randomDelay(3000, 5000));
-      } catch (e) {
-        log(`  ⚠️ Erro ao preencher cartão (PASSO 2.9): ${e.message}`);
+
+        // Salva status na conta
+        try {
+          if (account.id) updateAccount(account.id, { paymentProfileCreated: true });
+          log('  ✅ Status "perfil de pagamento adicionado" salvo na conta');
+        } catch (e) { log(`  ⚠️ Erro ao salvar status: ${e.message}`); }
       }
 
-      // ── PASSO 2.6: Tela de configuração — selecionar moeda USD ──
-      // Elemento fica na página principal (não em iframe).
-      // É um custom dropdown — clica no span para abrir, depois seleciona USD.
-      const CURRENCY_SPAN_IDS = [
-        'a39106134-D802-4EE5-9318-84D7AB4000E9--0',
-        'a42838FC3-FC4C-4161-A82B-250516F64164--0',
-      ];
-      log('  → Selecionando moeda USD na tela de configuração...');
-      try {
-        // Aguarda o elemento aparecer na página principal
-        let currencyEl = null;
-        const deadlineCurrency = Date.now() + 10000;
-        while (Date.now() < deadlineCurrency && !currencyEl) {
-          for (const id of CURRENCY_SPAN_IDS) {
-            const el = await page.$(`#${id}`) || await page.$(`#${id} span`);
-            if (el) { currencyEl = el; break; }
-          }
-          if (!currencyEl) await sleep(400);
-        }
+      // ── PASSO 2: Clicar em "Adicionar forma de pagamento" ──
+      log('  → Procurando "Adicionar forma de pagamento"...');
+      let paymentMethodClicked = false;
+      await sleep(randomDelay(1500, 2500));
 
-        if (currencyEl) {
-          // 1. Clica no span/elemento para abrir o dropdown
-          await currencyEl.click();
-          await sleep(randomDelay(800, 1500));
-          log('  → Dropdown de moeda aberto — procurando USD...');
-
-          // 2. Procura e clica na opção USD dentro do dropdown aberto
-          const usdClicked = await page.evaluate(() => {
-            // Tenta opção nativa de <select>
-            const selects = document.querySelectorAll('select');
-            for (const sel of selects) {
-              const opt = Array.from(sel.options).find(o =>
-                o.value === 'USD' || o.text.includes('USD') || o.text.includes('US Dollar') || o.text.includes('Dólar')
-              );
-              if (opt) {
-                sel.value = opt.value;
-                sel.dispatchEvent(new Event('change', { bubbles: true }));
-                return `select:${opt.value}`;
-              }
-            }
-            // Tenta item de dropdown customizado (li, [role="option"], material-select-dropdown-item)
-            const candidates = Array.from(document.querySelectorAll(
-              'li, [role="option"], material-select-dropdown-item, .goog-menuitem, [data-value]'
-            )).filter(el => el.offsetParent !== null);
-            for (const el of candidates) {
-              const txt = (el.textContent || el.getAttribute('data-value') || '').toUpperCase();
-              if (txt.includes('USD') || txt.includes('US DOLLAR') || txt.includes('DÓLAR AMERICANO')) {
-                el.click();
-                return `item:${el.textContent.trim().substring(0, 30)}`;
+      // 1) Por texto em todos os frames
+      for (const f of page.frames()) {
+        try {
+          const clicked = await f.evaluate(() => {
+            const btns = Array.from(document.querySelectorAll('button, [role="button"], a'))
+              .filter(b => b.offsetParent !== null);
+            for (const btn of btns) {
+              if (/adicionar forma de pagamento|add payment method/i.test(btn.textContent || '')) {
+                btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+                return (btn.textContent || '').trim();
               }
             }
             return null;
           });
-
-          if (usdClicked) {
-            log(`  ✅ USD selecionado (${usdClicked})`);
-          } else {
-            log('  ⚠️ Opção USD não encontrada no dropdown — continuando...');
+          if (clicked) {
+            log(`  ✅ "Adicionar forma de pagamento" clicado por texto: "${clicked}"`);
+            paymentMethodClicked = true;
+            break;
           }
-        } else {
-          log('  ⚠️ Elemento de moeda não encontrado — continuando...');
-        }
-        await sleep(randomDelay(800, 1500));
-
-        // Clicar em "Continuar" na tela de configuração (página principal)
-        log('  → Clicando Continuar (configuração)...');
-        const continuarClicked = await clickFirst(page, [
-          'button:has-text("Continuar")',
-          'button:has-text("Continue")',
-          'button:has-text("Próxima")',
-          'button:has-text("Next")',
-          'button:has-text("Salvar")',
-          'button:has-text("Save")',
-        ], 'Continuar configuração', log, 8000);
-        if (!continuarClicked) log('  ⚠️ Botão Continuar não encontrado na tela de configuração');
-        await sleep(randomDelay(3000, 5000));
-      } catch (e) {
-        log(`  ⚠️ Erro na tela de configuração: ${e.message}`);
+        } catch { }
       }
 
-      if (!cardSavedInNewModal) {
-        // ── PASSO 3 (LEGADO/FALLBACK): Adicionar cartão de crédito ──
-        log('  → Fluxo legado de cartão (fallback)...');
-        const cardAdded = await frame.evaluate(() => {
-          const allBtns = Array.from(document.querySelectorAll('material-button, button, [role="button"]'))
-            .filter(b => b.offsetParent !== null);
-          for (const btn of allBtns) {
-            const icon = btn.querySelector('[class*="credit_card"], [data-icon*="credit"], mat-icon');
-            if (icon) { btn.click(); return true; }
+      // 2) Loop id-100..300
+      if (!paymentMethodClicked) {
+        log('  ⚠️ Botão por texto não encontrado — tentando ids 100..300...');
+        for (let idNum = 100; idNum <= 300 && !paymentMethodClicked; idNum++) {
+          const visible = await frame.evaluate((s) => {
+            const el = document.querySelector(s);
+            return el && el.offsetParent !== null;
+          }, `#id-${idNum}`).catch(() => false);
+          if (!visible) continue;
+          await frame.evaluate((s) => {
+            const el = document.querySelector(s);
+            if (el) el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+          }, `#id-${idNum}`);
+          await sleep(randomDelay(1000, 1500));
+          // Verifica se abriu modal (botão "+" ou texto de cartão)
+          const modalOpened = await (async () => {
+            for (const f of page.frames()) {
+              try {
+                const has = await f.evaluate(() =>
+                  Array.from(document.querySelectorAll('button')).filter(b => b.offsetParent !== null)
+                    .some(b => b.textContent?.trim() === '+' || /cart[aã]o de cr[eé]dito/i.test(b.textContent || ''))
+                );
+                if (has) return true;
+              } catch { }
+            }
+            return false;
+          })();
+          if (modalOpened) {
+            log(`  ✅ Modal de pagamento aberta após id-${idNum}`);
+            paymentMethodClicked = true;
           }
-          return false;
-        });
-        if (!cardAdded) {
-          await clickFirst(frame, [
-            ':text("Adicionar cartão de crédito ou débito")',
-            ':text("Add credit or debit card")',
-            ':text("cartão de crédito")',
-            ':text("credit card")',
-          ], 'Botão cartão', log, 15000);
         }
-        await sleep(randomDelay(3000, 5000));
+      }
 
-        // === DADOS DO CARTÃO (LEGADO) ===
-        log('  💳 Preenchendo dados do cartão (legado)...');
-        const cardNumber = card.numero_cartao.replace(/\s/g, '');
-        const [cardMonth, cardYear] = card.validade.split('/');
-        const cardCvc = card.cvc;
-
-        // Número do cartão
-        log('  → Preenchendo número...');
-        try {
-          const cardInput = await findVisibleInput(
-            ['c58', 'c56', 'c60', 'c62'],
-            ['input[aria-label*="Número do cartão"]', 'input[aria-label*="Card number"]', 'input[autocomplete="cc-number"]'],
-            frame
-          );
-          if (cardInput) {
-            await cardInput.click({ clickCount: 3 });
-            await sleep(300);
-            await cardInput.type(cardNumber, { delay: TIMINGS.typingDelay });
-            log('  ✅ Número do cartão preenchido');
-          } else { log('  ⚠️ Campo número não encontrado'); }
-        } catch (e) { log(`  ⚠️ Erro no número: ${e.message}`); }
-        await sleep(randomDelay(1000, 2000));
-
-        // Validade
-        log('  → Preenchendo validade...');
-        try {
-          const expInput = await findVisibleInput(
-            ['c63', 'c61', 'c65', 'c67'],
-            ['input[aria-label*="Validade"]', 'input[aria-label*="Expir"]', 'input[autocomplete="cc-exp"]'],
-            frame
-          );
-          if (expInput) {
-            await expInput.click({ clickCount: 3 });
-            await sleep(300);
-            await expInput.type(`${cardMonth}/${cardYear}`, { delay: TIMINGS.typingDelay });
-            log(`  ✅ Validade preenchida: ${cardMonth}/${cardYear}`);
-          } else { log('  ⚠️ Campo validade não encontrado'); }
-        } catch (e) { log(`  ⚠️ Erro na validade: ${e.message}`); }
-        await sleep(randomDelay(1000, 2000));
-
-        // CVC
-        log('  → Preenchendo CVC...');
-        try {
-          const cvcInput = await findVisibleInput(
-            ['c68', 'c66', 'c70', 'c72'],
-            ['input[aria-label*="CVC"]', 'input[aria-label*="CVV"]', 'input[autocomplete="cc-csc"]'],
-            frame
-          );
-          if (cvcInput) {
-            await cvcInput.click({ clickCount: 3 });
-            await sleep(300);
-            await cvcInput.type(cardCvc, { delay: TIMINGS.typingDelay });
-            log('  ✅ CVC preenchido');
-          } else { log('  ⚠️ Campo CVC não encontrado'); }
-        } catch (e) { log(`  ⚠️ Erro no CVC: ${e.message}`); }
-        await sleep(randomDelay(1500, 3000));
-
-        // Confirmar / Enviar
-        log('  → Clicando Confirmar (final)...');
-        const finalConfirmed = await clickFirst(frame, [
-          'button:has-text("Enviar")',
-          'button:has-text("Submit")',
-          'button:has-text("Confirmar")',
-          'button:has-text("Confirm")',
-          'button:has-text("Concluir")',
-          'button:has-text("Done")',
-          'button:has-text("Salvar")',
-          'button:has-text("Save")',
-        ], 'Confirmar pagamento', log, 15000);
-        // Marca CNPJ como usado só após o cartão ser confirmado com sucesso
-        if (finalConfirmed && cnpjEntry) {
-          markCnpjUsed(cnpjToUse);
-          log(`  ✅ CNPJ ${cnpjToUse} marcado como usado`);
+      // 3) Último recurso: id-1..99
+      if (!paymentMethodClicked) {
+        log('  ⚠️ Tentando ids 1..99 (último recurso)...');
+        for (let idNum = 1; idNum <= 99 && !paymentMethodClicked; idNum++) {
+          const visible = await frame.evaluate((s) => {
+            const el = document.querySelector(s);
+            return el && el.offsetParent !== null;
+          }, `#id-${idNum}`).catch(() => false);
+          if (!visible) continue;
+          await frame.evaluate((s) => {
+            const el = document.querySelector(s);
+            if (el) el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+          }, `#id-${idNum}`);
+          await sleep(randomDelay(800, 1200));
+          paymentMethodClicked = true;
         }
-        await sleep(randomDelay(4000, 6000));
+        if (!paymentMethodClicked) log('  ⚠️ Nenhum id encontrado para "Adicionar forma de pagamento"');
+      }
+      await sleep(randomDelay(2000, 3000));
+
+      // ── PASSO 3: Clicar no primeiro "+" — "Adicionar cartão de crédito ou débito" ──
+      log('  → Clicando "Adicionar cartão de crédito ou débito"...');
+      let addCardClicked = false;
+
+      // 1) Por texto em todos os frames
+      for (const f of page.frames()) {
+        try {
+          const clicked = await f.evaluate(() => {
+            const btns = Array.from(document.querySelectorAll('button, [role="button"]'))
+              .filter(b => b.offsetParent !== null);
+            for (const btn of btns) {
+              if (/adicionar cart[aã]o de cr[eé]dito|add credit.*debit/i.test(btn.textContent || '')) {
+                btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+                return (btn.textContent || '').trim().substring(0, 60);
+              }
+            }
+            // Primeiro "+" visível
+            const plusBtn = btns.find(b => b.textContent?.trim() === '+');
+            if (plusBtn) {
+              plusBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+              return '+';
+            }
+            return null;
+          });
+          if (clicked) {
+            log(`  ✅ "Adicionar cartão" clicado: "${clicked}"`);
+            addCardClicked = true;
+            break;
+          }
+        } catch { }
+      }
+
+      // 2) Fallback: loop id-100..300 em todos os frames
+      if (!addCardClicked) {
+        log('  ⚠️ Botão por texto não encontrado — tentando id-100..300 em todos os frames...');
+        outer: for (let idNum = 100; idNum <= 300 && !addCardClicked; idNum++) {
+          for (const f of page.frames()) {
+            try {
+              const found = await f.evaluate((s) => {
+                const el = document.querySelector(s);
+                return el && el.offsetParent !== null;
+              }, `#id-${idNum}`);
+              if (!found) continue;
+              await f.evaluate((s) => {
+                const el = document.querySelector(s);
+                if (el) el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+              }, `#id-${idNum}`);
+              // Aguarda e valida se o modal de cartão abriu (#c1 apareceu)
+              await sleep(randomDelay(800, 1200));
+              let c1appeared = false;
+              for (const f2 of page.frames()) {
+                try {
+                  const has = await f2.evaluate(() => !!document.getElementById('c1'));
+                  if (has) { c1appeared = true; break; }
+                } catch { }
+              }
+              if (c1appeared) {
+                log(`  ✅ Modal de cartão aberta após id-${idNum} (frame: ${f.url().substring(0, 60)})`);
+                addCardClicked = true;
+                break outer;
+              }
+            } catch { }
+          }
+        }
+        if (!addCardClicked) log('  ⚠️ Nenhum botão de adicionar cartão encontrado');
+      }
+      await sleep(addCardClicked ? randomDelay(1500, 2500) : 0);
+
+      // ── PASSO 4: Preencher dados do cartão no _modalIframe (c1, c6, c11) ──
+      if (!addCardClicked) {
+        log('  ⚠️ Pulando preenchimento do cartão pois modal não foi aberta');
       } else {
-        log('  ℹ️ Cartão já salvo no modal novo — pulando fluxo legado');
+      log('  💳 Preenchendo dados do cartão...');
+
+      async function fillCardData() {
+        // Aguarda frame com #c1
+        let cardFrame = null;
+        const dlCard = Date.now() + 10000;
+        while (Date.now() < dlCard) {
+          for (const f of page.frames()) {
+            try {
+              const has = await f.evaluate(() => !!document.getElementById('c1'));
+              if (has) { cardFrame = f; break; }
+            } catch { }
+          }
+          if (cardFrame) break;
+          await sleep(300);
+        }
+        if (!cardFrame) return false;
+
+        const cardNum = card.numero_cartao.replace(/\s/g, '');
+        const [mo, yr] = card.validade.split('/');
+        const cvc = card.cvc;
+
+        const ok1 = await fillInputById(cardFrame, 'c1', cardNum);
+        log(ok1 ? '  ✅ #c1 (número) preenchido' : '  ⚠️ #c1 não encontrado');
+        await sleep(randomDelay(600, 1200));
+
+        const ok6 = await fillInputById(cardFrame, 'c6', `${mo}/${yr}`);
+        log(ok6 ? '  ✅ #c6 (validade) preenchido' : '  ⚠️ #c6 não encontrado');
+        await sleep(randomDelay(600, 1200));
+
+        const ok11 = await fillInputById(cardFrame, 'c11', cvc);
+        log(ok11 ? '  ✅ #c11 (CVC) preenchido' : '  ⚠️ #c11 não encontrado');
+        await sleep(randomDelay(1000, 2000));
+
+        // Clica no último botão visível do frame (salvar cartão)
+        const saved = await cardFrame.evaluate(() => {
+          const btns = Array.from(document.querySelectorAll('button')).filter(b => b.offsetParent !== null);
+          if (!btns.length) return null;
+          btns[btns.length - 1].click();
+          return btns[btns.length - 1].textContent?.trim() || 'último botão';
+        });
+        log(saved ? `  ✅ Cartão salvo (botão: "${saved}")` : '  ⚠️ Nenhum botão salvar encontrado');
+        return !!saved;
       }
+
+      let cardSaved = await fillCardData().catch(e => { log(`  ⚠️ Erro ao preencher cartão: ${e.message}`); return false; });
+
+      // Fallback: refresh + reabrir modal
+      if (!cardSaved) {
+        log('  ⚠️ Campos do cartão não encontrados — recarregando e tentando novamente...');
+        try {
+          await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+          await sleep(randomDelay(5000, 8000));
+          // Tenta reabrir modal de adicionar cartão
+          for (const f of page.frames()) {
+            try {
+              const clicked = await f.evaluate(() => {
+                const btns = Array.from(document.querySelectorAll('button, [role="button"]'))
+                  .filter(b => b.offsetParent !== null);
+                for (const btn of btns) {
+                  const txt = (btn.textContent || '').trim();
+                  if (/adicionar cart[aã]o|add.*card/i.test(txt) || txt === '+') {
+                    btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+                    return txt;
+                  }
+                }
+                return null;
+              });
+              if (clicked) { log(`  ✅ Modal reaberta após refresh: "${clicked}"`); break; }
+            } catch { }
+          }
+          await sleep(randomDelay(2000, 3000));
+          cardSaved = await fillCardData().catch(() => false);
+          log(cardSaved ? '  ✅ Cartão salvo após refresh' : '  ⚠️ Cartão não salvo mesmo após refresh');
+        } catch (e) { log(`  ⚠️ Erro no refresh fallback: ${e.message}`); }
+      }
+      } // fim if (addCardClicked)
 
     }
 
+    // ── PASSO 5: Selecionar "Não" e clicar em Enviar ──
+    await sleep(randomDelay(1500, 2500));
+    log('  → Selecionando opção "Não"...');
+    try {
+      // Estratégia 1: input dentro do segundo material-radio de communications-opt-in
+      const naoClicked = await page.evaluate(() => {
+        const radios = document.querySelectorAll('communications-opt-in material-radio');
+        if (radios.length >= 2) {
+          const input = radios[1].querySelector('input');
+          if (input) {
+            input.click();
+            // Dispara eventos para garantir que o framework Angular detecta a mudança
+            input.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            return true;
+          }
+          // fallback: clica no próprio material-radio[2]
+          radios[1].click();
+          return true;
+        }
+        return false;
+      });
+      if (naoClicked) {
+        log('  ✅ Opção "Não" selecionada (material-radio[2])');
+      } else {
+        // Estratégia 2: pelo ID parcial original
+        await page.evaluate(() => {
+          const el = document.querySelector('[id*="a71E94930"]');
+          if (el) el.click();
+        });
+        log('  ✅ Opção "Não" selecionada (id fallback)');
+      }
+    } catch (e2) { log(`  ⚠️ Opção "Não" não encontrada: ${e2.message}`); }
+
+    log('  ⏳ Aguardando 30 segundos antes de clicar em Enviar...');
+    await sleep(30000);
+    log('  → Clicando em "Enviar"...');
+    try {
+      // Tenta pelo CSS do botão Enviar (payments-signup div[4] material-button[1])
+      const submitClicked = await page.evaluate(() => {
+        const sel = 'payments-signup material-button';
+        const btns = Array.from(document.querySelectorAll(sel)).filter(b => b.offsetParent !== null);
+        if (btns.length) { btns[0].click(); return (btns[0].textContent || '').trim().substring(0, 40); }
+        // fallback: qualquer botão visível com texto "enviar" ou "submit"
+        const allBtns = Array.from(document.querySelectorAll('button, material-button'))
+          .filter(b => b.offsetParent !== null && /enviar|submit/i.test(b.textContent || ''));
+        if (allBtns.length) { allBtns[0].click(); return (allBtns[0].textContent || '').trim().substring(0, 40); }
+        return null;
+      });
+      if (submitClicked) {
+        log(`  ✅ Botão "Enviar" clicado: "${submitClicked}"`);
+      } else {
+        // fallback XPath
+        const submitEl = await page.$x('//*[@id="dart-1778795673777"]//material-button[1]').catch(() => []);
+        if (submitEl.length) { await submitEl[0].click(); log('  ✅ Botão "Enviar" clicado (XPath)'); }
+        else { log('  ⚠️ Botão "Enviar" não encontrado'); }
+      }
+    } catch (e) { log(`  ⚠️ Erro ao clicar "Enviar": ${e.message}`); }
+
+    // ── PASSO 6: Aguardar tela "Sua conta foi criada" e clicar em Continuar ──
+    log('  ⏳ Aguardando tela "Sua conta foi criada"...');
+    try {
+      await page.waitForFunction(
+        () => /sua conta foi criada|account.*created/i.test(document.body?.innerText || ''),
+        { timeout: 30000 }
+      );
+      log('  ✅ Tela "Sua conta foi criada" detectada');
+    } catch {
+      log('  ⚠️ Tela "Sua conta foi criada" não detectada — tentando continuar');
+    }
+    await sleep(randomDelay(1500, 2500));
+
+    log('  → Clicando em "Continuar"...');
+    try {
+      const continuarClicked = await page.evaluate(() => {
+        // Botão em onboarding-congrats-view identity-verification-entry div[3]
+        const sel = 'onboarding-congrats-view identity-verification-entry material-button';
+        const btns = Array.from(document.querySelectorAll(sel)).filter(b => b.offsetParent !== null);
+        if (btns.length) { btns[0].click(); return (btns[0].textContent || '').trim().substring(0, 40); }
+        // fallback: qualquer botão visível com texto "continuar/continue"
+        const allBtns = Array.from(document.querySelectorAll('material-button, button'))
+          .filter(b => b.offsetParent !== null && /continuar|continue/i.test(b.textContent || ''));
+        if (allBtns.length) { allBtns[0].click(); return (allBtns[0].textContent || '').trim().substring(0, 40); }
+        return null;
+      });
+      if (continuarClicked) {
+        log(`  ✅ "Continuar" clicado: "${continuarClicked}"`);
+      } else {
+        log('  ⚠️ Botão "Continuar" não encontrado');
+      }
+    } catch (e) { log(`  ⚠️ Erro ao clicar "Continuar": ${e.message}`); }
+
+    await sleep(randomDelay(2000, 3000));
+
+    // ── PASSO 7: Selecionar primeira opção (material-radio[1]) em questions-widget div[3] ──
+    log('  → Selecionando opção no questionário (div[3] material-radio[1])...');
+    try {
+      const r1Clicked = await page.evaluate(() => {
+        const groups = document.querySelectorAll('questions-widget > div > div');
+        // div[3] = index 2
+        const div3 = groups[2];
+        if (div3) {
+          const radios = div3.querySelectorAll('material-radio');
+          if (radios.length) {
+            const input = radios[0].querySelector('input');
+            if (input) {
+              input.click();
+              input.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+              input.dispatchEvent(new Event('change', { bubbles: true }));
+              return true;
+            }
+            radios[0].click();
+            return true;
+          }
+        }
+        return false;
+      });
+      log(r1Clicked ? '  ✅ Opção do questionário selecionada' : '  ⚠️ Opção do questionário não encontrada');
+    } catch (e) { log(`  ⚠️ Erro ao selecionar opção: ${e.message}`); }
+
+    await sleep(randomDelay(1500, 2500));
+
+    // ── PASSO 8: Clicar no material-button em questions-widget div[4] para finalizar ──
+    log('  → Clicando no botão final (questions-widget div[4])...');
+    try {
+      const finalClicked = await page.evaluate(() => {
+        const groups = document.querySelectorAll('questions-widget > div > div');
+        // div[4] = index 3
+        const div4 = groups[3];
+        if (div4) {
+          const btn = div4.querySelector('material-button');
+          if (btn && btn.offsetParent !== null) {
+            btn.click();
+            return (btn.textContent || '').trim().substring(0, 40);
+          }
+        }
+        return null;
+      });
+      if (finalClicked) {
+        log(`  ✅ Botão final clicado: "${finalClicked}"`);
+      } else {
+        log('  ⚠️ Botão final não encontrado');
+      }
+    } catch (e) { log(`  ⚠️ Erro ao clicar botão final: ${e.message}`); }
+
+    await sleep(randomDelay(2000, 3000));
 
     log('✅ [3/5] Pagamento configurado');
+    log('⏳ Aguardando 5 minutos com o navegador aberto para análise...');
+    await sleep(300000);
+    log('✅ Pausa de 5 minutos concluída — prosseguindo...');
   } catch (err) {
     log(`⚠️ Erro na Parte 3 (Pagamento): ${err.message}`);
   }
 
   // Aguarda 2 minutos antes de ir ao Google Cloud
+  if (account.googleAdsApiKey) {
+    log('⏭️ API Key já existe — pulando Partes 4 e 5 (Cloud Console + API Key)');
+    return { apiKey: account.googleAdsApiKey, googleAdsAccountId };
+  }
+
   log('⏳ Aguardando 2 minutos antes de ir ao Google Cloud...');
   await sleep(120000);
 
