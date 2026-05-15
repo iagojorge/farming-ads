@@ -8,9 +8,8 @@ export default function Security() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(new Set());
   const [running, setRunning] = useState(false);
-
-  const TARGET_EMAIL = 'dime@agencia-titan.com';
-  const TARGET_PASSWORD = '#ytskiro2026';
+  const [targetEmail, setTargetEmail] = useState('');
+  const [targetPassword, setTargetPassword] = useState('');
 
   const loadAccounts = async () => {
     setLoading(true);
@@ -26,6 +25,10 @@ export default function Security() {
 
   useEffect(() => {
     loadAccounts();
+    api.getSecurityConfig().then(({ targetEmail: e, targetPassword: p }) => {
+      setTargetEmail(e || '');
+      setTargetPassword(p || '');
+    }).catch(() => {});
 
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -88,15 +91,15 @@ export default function Security() {
     }
   };
 
-  const emailOk = accounts.filter((a) => a.recoveryEmail === TARGET_EMAIL).length;
-  const passwordOk = accounts.filter((a) => a.password === TARGET_PASSWORD).length;
+  const emailOk = accounts.filter((a) => a.recoveryEmail === targetEmail).length;
+  const passwordOk = accounts.filter((a) => a.password === targetPassword).length;
   const blockedCount = accounts.filter((a) => a.status === 'desativada').length;
-  const pendingCount = accounts.filter((a) => a.status !== 'desativada' && (a.recoveryEmail !== TARGET_EMAIL || a.password !== TARGET_PASSWORD)).length;
+  const pendingCount = accounts.filter((a) => a.status !== 'desativada' && (a.recoveryEmail !== targetEmail || a.password !== targetPassword)).length;
 
   const getTargetIds = () => {
     if (selected.size > 0) return Array.from(selected);
     return accounts
-      .filter((a) => a.status !== 'desativada' && (a.recoveryEmail !== TARGET_EMAIL || a.password !== TARGET_PASSWORD))
+      .filter((a) => a.status !== 'desativada' && (a.recoveryEmail !== targetEmail || a.password !== targetPassword))
       .map((a) => a.id);
   };
 
@@ -200,8 +203,8 @@ export default function Security() {
           </div>
 
           {accounts.map((account) => {
-            const emailIsOk = account.recoveryEmail === TARGET_EMAIL;
-            const pwIsOk = account.password === TARGET_PASSWORD;
+            const emailIsOk = account.recoveryEmail === targetEmail;
+            const pwIsOk = account.password === targetPassword;
             const isBlocked = account.status === 'desativada';
             return (
               <div
@@ -271,7 +274,7 @@ export default function Security() {
       <div className="bg-yellow-950/30 border border-yellow-800/40 rounded-lg p-4">
         <h3 className="text-sm font-medium text-yellow-300 mb-2">Sobre Segurança</h3>
         <ul className="text-xs text-yellow-400/80 space-y-1 list-disc list-inside">
-          <li>O sistema faz login, troca o email de recuperação para <code>{TARGET_EMAIL}</code> e a senha para a senha padrão</li>
+          <li>O sistema faz login, troca o email de recuperação para <code>{targetEmail || '(não configurado)'}</code> e a senha para a senha padrão</li>
           <li>Ambas as tarefas rodam na mesma sessão do browser (login único)</li>
           <li>Após a troca, os dados são atualizados automaticamente no sistema</li>
           <li>Contas já com email e senha corretos são puladas automaticamente</li>

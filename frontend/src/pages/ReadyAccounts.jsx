@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle, Download, RefreshCw, Package, Zap, Square, Chrome, Trash2 } from 'lucide-react';
+import { CheckCircle, Download, RefreshCw, Package, Zap, Square, Chrome, Trash2, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '../api/index.js';
 
@@ -9,6 +9,7 @@ export default function ReadyAccounts() {
   const [selected, setSelected] = useState(new Set());
   const [exporting, setExporting] = useState(false);
   const [runningAds, setRunningAds] = useState(false);
+  const [runningMCC, setRunningMCC] = useState(false);
   const [openingChrome, setOpeningChrome] = useState(false);
   const [stoppingChrome, setStoppingChrome] = useState(false);
   const [chromeRunning, setChromeRunning] = useState(false);
@@ -22,6 +23,7 @@ export default function ReadyAccounts() {
       ]);
       setAccounts(all.filter((a) => a.status === 'ready_for_ads'));
       setRunningAds(!!warmupStatus?.isGoogleAdsRunning);
+      setRunningMCC(!!warmupStatus?.isMCCRunning);
       setChromeRunning(!!warmupStatus?.isOpenChromeRunning);
     } catch (err) {
       toast.error('Erro ao carregar contas: ' + err.message);
@@ -218,8 +220,8 @@ export default function ReadyAccounts() {
 
           {(() => {
             const noKeyIds = selected.size > 0
-              ? accounts.filter((a) => selected.has(a.id) && !a.googleAdsApiKey).map((a) => a.id)
-              : accounts.filter((a) => !a.googleAdsApiKey).map((a) => a.id);
+              ? accounts.filter((a) => selected.has(a.id)).map((a) => a.id)
+              : accounts.map((a) => a.id);
             return noKeyIds.length > 0 && (
               <button
                 onClick={async () => {
@@ -257,6 +259,51 @@ export default function ReadyAccounts() {
             >
               <Square className="w-4 h-4" />
               Parar
+            </button>
+          )}
+
+          {/* Botão MCC */}
+          {(() => {
+            const mccIds = selected.size > 0
+              ? accounts.filter((a) => selected.has(a.id)).map((a) => a.id)
+              : accounts.map((a) => a.id);
+            return mccIds.length > 0 && (
+              <button
+                onClick={async () => {
+                  setRunningMCC(true);
+                  try {
+                    await api.runMCC(mccIds);
+                    toast.success(`MCC iniciado para ${mccIds.length} conta(s)!`);
+                  } catch (err) {
+                    toast.error('Erro: ' + err.message);
+                  } finally {
+                    setRunningMCC(false);
+                  }
+                }}
+                disabled={runningMCC}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                <Users className="w-4 h-4" />
+                {runningMCC ? 'Rodando...' : `MCC (${mccIds.length})`}
+              </button>
+            );
+          })()}
+
+          {runningMCC && (
+            <button
+              onClick={async () => {
+                try {
+                  await api.stopMCC();
+                  toast.info('Parando MCC...');
+                  setRunningMCC(false);
+                } catch (err) {
+                  toast.error('Erro: ' + err.message);
+                }
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              <Square className="w-4 h-4" />
+              Parar MCC
             </button>
           )}
 

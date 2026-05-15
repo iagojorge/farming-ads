@@ -72,6 +72,8 @@ export const api = {
   startWarmupAccount: (id) => req('POST', `/accounts/${id}/warmup`),
   runGoogleAds: (accountIds) => req('POST', '/warmup/google-ads', { accountIds }),
   stopGoogleAds: () => req('POST', '/warmup/google-ads/stop'),
+  runMCC: (accountIds) => req('POST', '/warmup/mcc', { accountIds }),
+  stopMCC: () => req('POST', '/warmup/mcc/stop'),
   openChrome: (accountIds) => req('POST', '/warmup/open-chrome', { accountIds }),
   stopOpenChrome: () => req('POST', '/warmup/open-chrome/stop'),
 
@@ -79,6 +81,14 @@ export const api = {
   getRecoveryStatus: () => req('GET', '/accounts/recovery-status'),
   updateRecoveryEmail: (accountIds) => req('POST', '/accounts/update-recovery-email', { accountIds }),
   stopRecoveryEmail: () => req('POST', '/accounts/recovery-email/stop'),
+
+  // Security config
+  getSecurityConfig: () => req('GET', '/security/config'),
+
+  // Cards
+  getCards: () => req('GET', '/cards'),
+  addCard: (data) => req('POST', '/cards', data),
+  deleteCard: (id) => req('DELETE', `/cards/${id}`),
 
   // Ready Accounts
   exportCookies: (accountIds) => req('POST', '/accounts/export-cookies', { accountIds: accountIds || [] }),

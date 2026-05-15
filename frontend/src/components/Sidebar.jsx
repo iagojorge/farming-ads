@@ -9,6 +9,7 @@ import {
   LogOut,
   CheckCircle,
   Shield,
+  CreditCard,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth.js';
 
@@ -18,6 +19,7 @@ const NAV = [
   { id: 'schedule', label: 'Agendamento', Icon: CalendarClock },
   { id: 'logs', label: 'Logs', Icon: ScrollText },
   { id: 'ready', label: 'Contas Prontas', Icon: CheckCircle },
+  { id: 'cards', label: 'Cartões', Icon: CreditCard },
   { id: 'security', label: 'Segurança', Icon: Shield },
 ];
 

@@ -17,9 +17,10 @@ import {
   deleteAccount,
   getAccountsByStatus,
 } from '../store.js';
+import { listCards, createCard, removeCard } from '../cardsStore.js';
 import { stopWorker, getWorkerStatus } from '../worker.js';
 import { runLoginAccounts, stopLoginWorker, getLoginWorkerStatus } from '../loginWorker.js';
-import { runWarmupCycle, runWarmupForSelectedAccounts, runGoogleAdsForAccounts, runOpenChromeForAccounts, getWarmupWorkerStatus, checkExpiredWarmups, cleanupStuckWarmingAccounts, startWarmup, stopWarmupWorker, stopGoogleAdsWorker, stopOpenChromeWorker } from '../warmupWorker.js';
+import { runWarmupCycle, runWarmupForSelectedAccounts, runGoogleAdsForAccounts, runMCCForAccounts, runOpenChromeForAccounts, getWarmupWorkerStatus, checkExpiredWarmups, cleanupStuckWarmingAccounts, startWarmup, stopWarmupWorker, stopGoogleAdsWorker, stopMCCWorker, stopOpenChromeWorker } from '../warmupWorker.js';
 import { runRecoveryEmailUpdate, getRecoveryWorkerStatus, stopRecoveryWorker } from '../recoveryEmailWorker.js';
 import { setupSchedules, setupWarmupSchedule } from '../scheduler.js';
 import { addClient, removeClient, broadcast } from '../events.js';
@@ -458,6 +459,20 @@ router.post('/warmup/google-ads/stop', (_req, res) => {
   res.json({ stopped: true });
 });
 
+router.post('/warmup/mcc', (req, res) => {
+  const { accountIds } = req.body || {};
+  if (!accountIds || accountIds.length === 0) {
+    return res.status(400).json({ error: 'Nenhuma conta selecionada' });
+  }
+  runMCCForAccounts(accountIds).catch((err) => console.error('[api] MCC error:', err.message));
+  res.json({ started: true });
+});
+
+router.post('/warmup/mcc/stop', (_req, res) => {
+  stopMCCWorker();
+  res.json({ stopped: true });
+});
+
 router.post('/warmup/open-chrome', (req, res) => {
   const { accountIds } = req.body || {};
   if (!accountIds || accountIds.length === 0) {
@@ -504,5 +519,52 @@ router.post('/accounts/:id/warmup', (req, res) => {
   } catch (err) {
     res.status(404).json({ error: err.message });
   }
+});
+
+// ── SECURITY CONFIG ────────────────────────────────────────────
+router.get('/security/config', (_req, res) => {
+  res.json({
+    targetEmail: process.env.RECOVERY_TARGET_EMAIL || '',
+    targetPassword: process.env.RECOVERY_TARGET_PASSWORD || '',
+  });
+});
+
+// ── CARDS ─────────────────────────────────────────────────────
+router.get('/cards', (_req, res) => {
+  const cards = listCards();
+  // Mascarar número: mostrar apenas últimos 4 dígitos
+  const masked = cards.map(({ id, bandeira, moeda, numero_cartao, validade, status, usado }) => ({
+    id,
+    bandeira,
+    moeda,
+    last4: numero_cartao.replace(/\s/g, '').slice(-4),
+    validade,
+    status,
+    usado: !!usado,
+  }));
+  res.json(masked);
+});
+
+router.post('/cards', (req, res) => {
+  const { bandeira, moeda, numero_cartao, validade, cvc, status } = req.body;
+  if (!numero_cartao || !validade || !cvc) {
+    return res.status(400).json({ error: 'numero_cartao, validade e cvc são obrigatórios' });
+  }
+  const card = createCard({ bandeira: bandeira || 'Visa', moeda: moeda || 'USD', numero_cartao, validade, cvc, status: status || 'Ativado' });
+  res.status(201).json({
+    id: card.id,
+    bandeira: card.bandeira,
+    moeda: card.moeda,
+    last4: card.numero_cartao.replace(/\s/g, '').slice(-4),
+    validade: card.validade,
+    status: card.status,
+    usado: false,
+  });
+});
+
+router.delete('/cards/:id', (req, res) => {
+  const removed = removeCard(req.params.id);
+  if (!removed) return res.status(404).json({ error: 'Cartão não encontrado' });
+  res.json({ success: true });
 });
 

@@ -10,6 +10,7 @@ import Logs from './pages/Logs.jsx';
 import Login from './pages/Login.jsx';
 import ReadyAccounts from './pages/ReadyAccounts.jsx';
 import Security from './pages/Security.jsx';
+import Cards from './pages/Cards.jsx';
 import { createEventSource } from './api/index.js';
 
 function ProtectedApp() {
@@ -47,7 +48,7 @@ function ProtectedApp() {
     return () => es.close();
   }, [getToken]);
 
-  const pages = { dashboard: Dashboard, accounts: Accounts, schedule: Schedule, logs: Logs, ready: ReadyAccounts, security: Security };
+  const pages = { dashboard: Dashboard, accounts: Accounts, schedule: Schedule, logs: Logs, ready: ReadyAccounts, security: Security, cards: Cards };
   const PageComponent = pages[page] || Dashboard;
 
   return (
