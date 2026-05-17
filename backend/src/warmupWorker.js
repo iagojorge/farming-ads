@@ -10,6 +10,7 @@ let isMCCRunning = false;
 let shouldStopWarmup = false;
 let shouldStopGoogleAds = false;
 let shouldStopMCC = false;
+let _warmupRunId = 0; // incrementado a cada stop para invalidar ciclos travados
 let activePeriodWarmups = new Map(); // period → { accounts: [...], startTime }
 let openChromeSessions = new Map(); // accountId → { email, close }
 
@@ -101,10 +102,11 @@ export function getWarmupWorkerStatus() {
 }
 
 export function stopWarmupWorker() {
-  if (isRunning) {
-    shouldStopWarmup = true;
-    makeLog('warn', null, 'Warmup: Solicitação de parada recebida.');
-  }
+  shouldStopWarmup = true;
+  isRunning = false;          // força reset imediato — não espera finally
+  _warmupRunId++;             // invalida qualquer ciclo travado em andamento
+  broadcast('warmup-status', { isRunning: false });
+  makeLog('warn', null, 'Warmup: Solicitação de parada recebida — estado reiniciado.');
 }
 
 export function stopGoogleAdsWorker() {
@@ -313,6 +315,8 @@ export function startWarmup(accountId) {
  * Executa uma sessão de aquecimento para uma conta individual (Playwright).
  */
 async function runSingleWarmup(account) {
+  if (shouldStopWarmup) return; // abortado antes de começar
+
   const { id, email } = account;
 
   // Garante status warming apenas para contas ainda em progresso.
@@ -566,7 +570,9 @@ export async function runWarmupForSelectedAccounts(accountIds) {
     return;
   }
 
+  const myRunId = ++_warmupRunId;
   isRunning = true;
+  shouldStopWarmup = false;
   broadcast('warmup-status', { isRunning: true });
 
   try {
@@ -609,9 +615,11 @@ export async function runWarmupForSelectedAccounts(accountIds) {
 
     makeLog('info', null, 'Aquecimento manual finalizado.');
   } finally {
-    isRunning = false;
-    shouldStopWarmup = false;
-    broadcast('warmup-status', { isRunning: false });
+    if (_warmupRunId === myRunId) {
+      isRunning = false;
+      shouldStopWarmup = false;
+      broadcast('warmup-status', { isRunning: false });
+    }
   }
 }
 
@@ -621,7 +629,9 @@ export async function runWarmupCycle() {
     return;
   }
 
+  const myRunId = ++_warmupRunId;
   isRunning = true;
+  shouldStopWarmup = false;
   broadcast('warmup-status', { isRunning: true });
 
   try {
@@ -665,8 +675,10 @@ export async function runWarmupCycle() {
 
     makeLog('info', null, 'Ciclo de aquecimento finalizado.');
   } finally {
-    isRunning = false;
-    shouldStopWarmup = false;
-    broadcast('warmup-status', { isRunning: false });
+    if (_warmupRunId === myRunId) {
+      isRunning = false;
+      shouldStopWarmup = false;
+      broadcast('warmup-status', { isRunning: false });
+    }
   }
 }
