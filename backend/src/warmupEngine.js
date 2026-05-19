@@ -1347,6 +1347,19 @@ async function detectCurrentStage(page, log) {
       if (paymentEl && await paymentEl.isVisible()) return 'payment';
     } catch { /* ignora */ }
 
+    // Detecta modal de CEP/endereço que pode aparecer no meio do wizard
+    try {
+      const zipModal = await page.evaluate(() => {
+        const inputs = Array.from(document.querySelectorAll('input[type="text"], input[type="number"], input[autocomplete*="postal"], input[autocomplete*="zip"]'))
+          .filter(i => i.offsetParent !== null);
+        const labels = Array.from(document.querySelectorAll('label, [aria-label]'))
+          .map(el => (el.textContent || el.getAttribute('aria-label') || '').toLowerCase());
+        const hasZipLabel = labels.some(l => /zip|cep|postal|address|endere/i.test(l));
+        return inputs.length > 0 && hasZipLabel;
+      });
+      if (zipModal) return 'zip-modal';
+    } catch { /* ignora */ }
+
     const stages = [
       { name: 'business-name', selectors: 'business-name-view-for-chat, business-name-wrapper' },
       { name: 'business-insights', selectors: 'business-insights-wrapper' },
@@ -1722,48 +1735,115 @@ async function createGoogleAdsAccount(page, log, account = {}) {
           ], 'Pular campaign-type', log, 10000);
           await sleep(randomDelay(4000, 6000));
         }
-        else if (currentStage === 'expert') {
-          log('  ✅ expert-wrapper — selecionando USD e continuando...');
-          // Seleciona USD
-          await clickFirst(page, [
-            'xpath=//*[contains(@id,"aED1B6733")]',
-            'xpath=//*[contains(@id,"a1535AF3A")]',
-            'material-dropdown-select',
-            'xpath=//material-dropdown-select//dropdown-button',
-          ], 'Seletor moeda', log, 10000);
-          await sleep(randomDelay(2000, 3000));
-          await clickFirst(page, [
-            'material-select-item:has-text("USD")',
-            '[role="option"]:has-text("USD")',
-            ':text("USD")',
-          ], 'USD', log, 10000);
-          await sleep(randomDelay(2000, 3000));
-          // Clica Continuar → leva para signup/payment
-          const continuarOk = await clickFirst(page, [
-            'xpath=//expert-wrapper/div/div/material-button[1]/material-ripple',
-            'xpath=//expert-wrapper//material-button[1]/material-ripple',
-            'xpath=//expert-wrapper//material-button/material-ripple',
-            'xpath=//expert-wrapper//material-button[1]',
-            'xpath=//expert-wrapper//material-button',
-          ], 'Continuar', log, 10000);
-          if (!continuarOk) {
-            // Fallback: clica por texto "continuar" ou último botão visível da página
-            await page.evaluate(() => {
-              const btns = Array.from(document.querySelectorAll('material-button, button'))
+        else if (currentStage === 'zip-modal') {
+          log('  → Modal de CEP/endereço detectada — preenchendo e avançando...');
+          try {
+            const zip = getRandomZip();
+            await page.evaluate((zipCode) => {
+              const inputs = Array.from(document.querySelectorAll('input[type="text"], input[type="number"]'))
+                .filter(i => i.offsetParent !== null);
+              for (const inp of inputs) {
+                const label = document.querySelector(`label[for="${inp.id}"]`);
+                const labelText = (label?.textContent || inp.getAttribute('aria-label') || inp.placeholder || '').toLowerCase();
+                if (/zip|cep|postal/i.test(labelText) || /zip|cep|postal/i.test(inp.name || '')) {
+                  inp.focus();
+                  inp.value = zipCode;
+                  inp.dispatchEvent(new Event('input', { bubbles: true }));
+                  inp.dispatchEvent(new Event('change', { bubbles: true }));
+                  return;
+                }
+              }
+              // fallback: preenche o primeiro input visível
+              if (inputs.length) {
+                inputs[0].focus();
+                inputs[0].value = zipCode;
+                inputs[0].dispatchEvent(new Event('input', { bubbles: true }));
+                inputs[0].dispatchEvent(new Event('change', { bubbles: true }));
+              }
+            }, zip);
+            log(`  ✅ CEP "${zip}" preenchido no modal`);
+            await sleep(randomDelay(800, 1500));
+            // Clica no botão de confirmar/continuar do modal
+            const confirmed = await page.evaluate(() => {
+              const btns = Array.from(document.querySelectorAll('button, material-button'))
                 .filter(b => b.offsetParent !== null);
-              const cont = btns.find(b => /continuar|continue|salvar|save/i.test(b.textContent || ''));
-              if (cont) { cont.click(); return; }
-              // fallback: último botão primário visível
-              const primary = btns.filter(b => {
-                const cls = b.className || '';
-                return /raised|primary|submit/i.test(cls);
-              });
-              if (primary.length) primary[primary.length - 1].click();
-              else if (btns.length) btns[btns.length - 1].click();
+              const ok = btns.find(b => /confirmar|confirm|continuar|continue|ok|salvar|save|aplicar|apply/i.test(b.textContent || ''));
+              if (ok) { ok.click(); return (ok.textContent || '').trim(); }
+              if (btns.length) { btns[btns.length - 1].click(); return 'último botão'; }
+              return null;
             });
-            log('  ⚠️ Continuar via fallback evaluate');
+            if (confirmed) log(`  ✅ Modal CEP confirmada: "${confirmed}"`);
+            else log('  ⚠️ Botão confirmar do modal CEP não encontrado');
+          } catch (e) { log(`  ⚠️ Erro no modal CEP: ${e.message}`); }
+          await sleep(randomDelay(3000, 5000));
+        }
+        else if (currentStage === 'expert') {
+          log('  ✅ expert-wrapper — selecionando USD e continuando (polly 15 min)...');
+          const expertDeadline = Date.now() + 15 * 60 * 1000;
+          let expertDone = false;
+          let expertAttempt = 0;
+
+          while (!expertDone && Date.now() < expertDeadline) {
+            expertAttempt++;
+            log(`  → Expert tentativa ${expertAttempt}...`);
+
+            // Verifica se já saiu do expert (pagamento apareceu)
+            const paymentNowExpert = await page.waitForSelector(
+              '[jscontroller="J5ul1"], #payments-signup-iframe-containerIframe',
+              { state: 'attached', timeout: 2000 }
+            ).then(() => true).catch(() => false);
+            if (paymentNowExpert) { log('  ✅ Tela de pagamento detectada — saindo do expert'); expertDone = true; break; }
+
+            // Seleciona USD
+            await clickFirst(page, [
+              'xpath=//*[contains(@id,"aED1B6733")]',
+              'xpath=//*[contains(@id,"a1535AF3A")]',
+              'material-dropdown-select',
+              'xpath=//material-dropdown-select//dropdown-button',
+            ], 'Seletor moeda', log, 8000);
+            await sleep(randomDelay(1500, 2500));
+            await clickFirst(page, [
+              'material-select-item:has-text("USD")',
+              '[role="option"]:has-text("USD")',
+              ':text("USD")',
+            ], 'USD', log, 8000);
+            await sleep(randomDelay(1500, 2500));
+
+            // Clica Continuar
+            const continuarOk = await clickFirst(page, [
+              'xpath=//expert-wrapper/div/div/material-button[1]/material-ripple',
+              'xpath=//expert-wrapper//material-button[1]/material-ripple',
+              'xpath=//expert-wrapper//material-button/material-ripple',
+              'xpath=//expert-wrapper//material-button[1]',
+              'xpath=//expert-wrapper//material-button',
+            ], 'Continuar', log, 8000);
+            if (!continuarOk) {
+              await page.evaluate(() => {
+                const btns = Array.from(document.querySelectorAll('material-button, button'))
+                  .filter(b => b.offsetParent !== null);
+                const cont = btns.find(b => /continuar|continue|salvar|save/i.test(b.textContent || ''));
+                if (cont) { cont.click(); return; }
+                const primary = btns.filter(b => /raised|primary|submit/i.test(b.className || ''));
+                if (primary.length) primary[primary.length - 1].click();
+                else if (btns.length) btns[btns.length - 1].click();
+              });
+              log('  ⚠️ Continuar via fallback evaluate');
+            }
+            await sleep(randomDelay(4000, 6000));
+
+            // Verifica se avançou
+            const stageAfterExpert = await detectCurrentStage(page, log);
+            if (stageAfterExpert !== 'expert') {
+              log(`  ✅ Saiu do expert → ${stageAfterExpert}`);
+              expertDone = true;
+            } else {
+              log(`  ⚠️ Ainda no expert — recarregando e tentando de novo...`);
+              await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => {});
+              await sleep(randomDelay(4000, 7000));
+            }
           }
-          await sleep(randomDelay(5000, 8000));
+          if (!expertDone) log('  ⚠️ Expert: timeout de 15 min — seguindo mesmo assim');
+          await sleep(randomDelay(3000, 5000));
         }
         else {
           // Etapa desconhecida — tenta pular
@@ -1809,6 +1889,14 @@ async function createGoogleAdsAccount(page, log, account = {}) {
 
   // ── Parte 3: Configurar perfil de pagamento + cartão ─────
   log('🔷 [3/5] Configurando pagamento...');
+  // Polly: tenta por até 15 minutos, recarregando entre tentativas
+  const part3Deadline = Date.now() + 15 * 60 * 1000;
+  let part3Done = false;
+  let part3Attempt = 0;
+
+  while (!part3Done && Date.now() < part3Deadline) {
+    part3Attempt++;
+    log(`  🔄 Parte 3 — tentativa ${part3Attempt}...`);
   try {
     // NÃO navegamos para aw/billing — o botão "Criar novo perfil" só existe
     // na tela de signup/payment onde o wizard nos deixou.
@@ -2450,12 +2538,22 @@ async function createGoogleAdsAccount(page, log, account = {}) {
     await sleep(randomDelay(2000, 3000));
 
     log('✅ [3/5] Pagamento configurado');
+    part3Done = true; // sucesso — sai do polly
     log('⏳ Aguardando 5 minutos com o navegador aberto para análise...');
     await sleep(300000);
     log('✅ Pausa de 5 minutos concluída — prosseguindo...');
   } catch (err) {
-    log(`⚠️ Erro na Parte 3 (Pagamento): ${err.message}`);
+    log(`⚠️ Tentativa ${part3Attempt} falhou: ${err.message}`);
+    if (Date.now() < part3Deadline) {
+      log('  🔄 Recarregando página e tentando Parte 3 novamente...');
+      try {
+        await page.goto('https://ads.google.com/aw/signup', { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await sleep(randomDelay(5000, 8000));
+      } catch (e2) { log(`  ⚠️ Erro ao recarregar: ${e2.message}`); }
+    }
   }
+  } // fim while polly Parte 3
+  if (!part3Done) log('⚠️ Parte 3: timeout de 15 min esgotado — seguindo com o que tiver');
 
   // Aguarda 2 minutos antes de ir ao Google Cloud
   if (account.googleAdsApiKey) {
